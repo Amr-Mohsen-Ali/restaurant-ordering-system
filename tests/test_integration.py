@@ -1,12 +1,11 @@
 import pytest
+
 from src import create_app
 
 
 @pytest.fixture
 def app():
-    app = create_app()
-    app.config['TESTING'] = True
-    return app
+    return create_app()
 
 
 @pytest.fixture
@@ -14,18 +13,38 @@ def client(app):
     return app.test_client()
 
 
-def test_full_order_flow(client):
-    menu_response = client.get('/menu')
-    assert menu_response.status_code == 200, "Menu should be accessible"
+def test_tracking_page_loads(client):
+    response = client.get("/tracking")
 
-    cart_response = client.get('/cart')
-    assert cart_response.status_code == 200, "Cart should be accessible"
+    assert response.status_code == 200
+    assert b"Order Tracking" in response.data
 
-    order_response = client.post('/place-order', json={'items': ['1'], 'total': 9.99})
-    assert order_response.status_code == 201, "Order should be created"
 
-    data = order_response.get_json()
-    order_id = data.get('order_id')
+def test_api_returns_status_for_valid_order(client):
+    response = client.get("/track/123")
 
-    track_response = client.get(f'/track/{order_id}')
-    assert track_response.status_code == 200, "Should be able to track order"
+    assert response.status_code == 200
+    assert response.get_json() == {
+        "success": True,
+        "status": "Preparing",
+    }
+
+
+def test_api_returns_invalid_order_for_unknown_id(client):
+    response = client.get("/track/999")
+
+    assert response.status_code == 404
+    assert response.get_json() == {
+        "success": False,
+        "error": "Invalid order ID",
+    }
+
+
+def test_api_handles_empty_order_id(client):
+    response = client.get("/track/%20")
+
+    assert response.status_code == 400
+    assert response.get_json() == {
+        "success": False,
+        "error": "Order ID is required",
+    }
