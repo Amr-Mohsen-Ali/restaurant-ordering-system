@@ -38,9 +38,14 @@ restaurant-project/
   "id": "string",
   "items": ["string"],
   "total": 0.00,
-  "status": "Preparing" | "Out for Delivery" | "Delivered"
+  "status": "Preparing"
 }
 ```
+
+Allowed status values:
+- Preparing
+- Out for Delivery
+- Delivered
 
 ## API Routes
 
@@ -49,7 +54,7 @@ restaurant-project/
 | Menu | GET | `/menu` |
 | Cart | GET/POST | `/cart` |
 | Order | POST | `/place-order` |
-| Tracking | GET | `/track/<id>` |
+| Tracking | GET | `/track/<order_id>` |
 
 ## Setup
 
