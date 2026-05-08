@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block title %}Menu{% endblock %}
+
+{% block content %}
+<h1>Menu</h1>
+<div id="menu-items"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+{% endblock %}

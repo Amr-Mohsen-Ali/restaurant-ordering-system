@@ -1,0 +1,38 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+nav {
+    background: #333;
+    padding: 1rem;
+}
+
+nav a {
+    color: white;
+    margin-right: 1rem;
+    text-decoration: none;
+}
+
+main {
+    padding: 2rem;
+}
+
+.menu-item, .cart-item {
+    border: 1px solid #ddd;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+}
+
+button:hover {
+    background: #0056b3;
+}

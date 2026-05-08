@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Cart{% endblock %}
+
+{% block content %}
+<h1>Your Cart</h1>
+<div id="cart-items"></div>
+<div id="cart-total"></div>
+<a href="/checkout">Proceed to Checkout</a>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/cart.js') }}"></script>
+{% endblock %}
