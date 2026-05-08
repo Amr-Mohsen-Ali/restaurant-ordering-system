@@ -17,6 +17,27 @@
         </form>
 
         <div id="result" role="status" aria-live="polite">Waiting for an order ID.</div>
+
+        <div class="status-progress" aria-label="Order progress">
+            <div class="status-step" data-status-step="Preparing">
+                <span class="status-dot"></span>
+                <span>Preparing</span>
+            </div>
+            <div class="status-step" data-status-step="Out for Delivery">
+                <span class="status-dot"></span>
+                <span>Out for Delivery</span>
+            </div>
+            <div class="status-step" data-status-step="Delivered">
+                <span class="status-dot"></span>
+                <span>Delivered</span>
+            </div>
+        </div>
+
+        <div id="orderDetails" class="order-details" hidden></div>
+
+        <button id="advanceButton" class="secondary-button" type="button" hidden>
+            Advance Status
+        </button>
     </section>
 </main>
 {% endblock %}

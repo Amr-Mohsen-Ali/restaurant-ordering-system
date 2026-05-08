@@ -23,4 +23,22 @@ ORDERS = {
         "total": 18.75,
         "status": "Delivered",
     },
+    "321": {
+        "id": "321",
+        "items": ["Chicken Wrap", "Lemonade"],
+        "total": 11.25,
+        "status": "Preparing",
+    },
+    "ABC-1": {
+        "id": "ABC-1",
+        "items": ["Soup"],
+        "total": 6.00,
+        "status": "Out for Delivery",
+    },
+    "000": {
+        "id": "000",
+        "items": [],
+        "total": 0.00,
+        "status": "Preparing",
+    },
 }
