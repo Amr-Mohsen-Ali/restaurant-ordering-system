@@ -15,8 +15,11 @@ def client(app):
 
 
 def test_cart_get(client):
-    pass
+    response = client.get('/cart')
+    data = response.get_json()
+    assert 'cart' in data, "Response should contain 'cart' key"
 
 
 def test_cart_add_item(client):
-    pass
+    response = client.post('/cart', json={'itemId': '1', 'action': 'add', 'quantity': 1})
+    assert response.status_code == 200, "Should return 200 on successful add"

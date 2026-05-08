@@ -15,4 +15,8 @@ def client(app):
 
 
 def test_place_order(client):
-    pass
+    response = client.post('/place-order', json={'items': ['1'], 'total': 9.99})
+    assert response.status_code == 201, "Should return 201 Created"
+    data = response.get_json()
+    assert 'order_id' in data, "Response should contain 'order_id'"
+    assert 'status' in data, "Response should contain 'status'"

@@ -15,4 +15,6 @@ def client(app):
 
 
 def test_menu_returns_items(client):
-    pass
+    response = client.get('/menu')
+    data = response.get_json()
+    assert 'items' in data, "Response should contain 'items' key"
