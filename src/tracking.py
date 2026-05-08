@@ -5,4 +5,4 @@ tracking_bp = Blueprint('tracking', __name__)
 
 @tracking_bp.route('/track/<order_id>', methods=['GET'])
 def track_order(order_id):
-    pass
+    return jsonify({'success': False, 'error': 'Invalid order ID'}), 404
