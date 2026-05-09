@@ -42,6 +42,7 @@ def place_order(cart_items, customer_info):
     return {
         "success": True,
         "order_id": order_id,
+        "status": "confirmed",
         "estimated_time": 25,
     }
 
