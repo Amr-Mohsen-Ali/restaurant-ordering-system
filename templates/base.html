@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Restaurant Ordering{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     <nav>
         <a href="/menu">Menu</a>
         <a href="/cart">Cart</a>
+        <a href="/checkout">Checkout</a>
         <a href="/track">Track Order</a>
     </nav>
     <main>

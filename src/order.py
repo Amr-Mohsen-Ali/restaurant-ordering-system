@@ -1,6 +1,6 @@
 import datetime
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 
 order_bp = Blueprint('order', __name__)
 
@@ -76,7 +76,15 @@ def _resolve_items(item_ids):
     return [_SAMPLE_ITEMS[i] for i in item_ids if i in _SAMPLE_ITEMS]
 
 
-# --- Routes ---
+def _demo_cart():
+    return [_SAMPLE_ITEMS["1"], _SAMPLE_ITEMS["2"]]
+
+
+def _cart_total(cart):
+    return sum(item["price"] * item["quantity"] for item in cart)
+
+
+# --- JSON API routes ---
 
 @order_bp.route('/place-order', methods=['POST'])
 def place_order_view():
@@ -105,3 +113,69 @@ def cancel_order_view(order_id):
     if result.get("error") == "Order not found":
         return jsonify(result), 404
     return jsonify(result), 400
+
+
+# --- HTML UI routes ---
+
+@order_bp.route('/checkout', methods=['GET'])
+def checkout_view():
+    cart = [] if request.args.get('empty') == '1' else _demo_cart()
+    return render_template(
+        "checkout.html",
+        view="cart",
+        cart=cart,
+        cart_total=_cart_total(cart),
+    )
+
+
+@order_bp.route('/checkout', methods=['POST'])
+def checkout_submit():
+    cart = _demo_cart()
+    customer = {
+        "name": request.form.get("name", "").strip(),
+        "address": request.form.get("address", "").strip(),
+    }
+    result = place_order(cart, customer)
+    if result["success"]:
+        return redirect(url_for("order.checkout_confirmation", order_id=result["order_id"]))
+    return render_template(
+        "checkout.html",
+        view="cart",
+        cart=cart,
+        cart_total=_cart_total(cart),
+        error=result["error"],
+        form_name=customer["name"],
+        form_address=customer["address"],
+    )
+
+
+@order_bp.route('/checkout/confirmation/<order_id>', methods=['GET'])
+def checkout_confirmation(order_id):
+    result = get_confirmation(order_id)
+    if "status" in result:
+        return render_template("checkout.html", view="confirmation", order=result)
+    return render_template(
+        "checkout.html",
+        view="error",
+        error=result.get("error", "Order not found"),
+    ), 404
+
+
+@order_bp.route('/checkout/cancel/<order_id>', methods=['POST'])
+def checkout_cancel(order_id):
+    result = cancel_order(order_id)
+    if result["success"]:
+        return render_template("checkout.html", view="cancelled", order_id=order_id)
+    confirmation_data = get_confirmation(order_id)
+    if "status" in confirmation_data:
+        return render_template(
+            "checkout.html",
+            view="confirmation",
+            order=confirmation_data,
+            cancel_error=result["error"],
+        )
+    return render_template(
+        "checkout.html",
+        view="error",
+        error=result.get("error", "Order not found"),
+    ), 404
