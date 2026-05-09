@@ -1,6 +1,6 @@
 import datetime
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, request
 
 order_bp = Blueprint('order', __name__)
 
@@ -64,8 +64,44 @@ def cancel_order(order_id):
     return {"success": True, "message": "Order cancelled"}
 
 
-# --- Routes (stub preserved; replaced in a later commit) ---
+# --- Item resolution (stub — wire to src/menu.py later) ---
+
+_SAMPLE_ITEMS = {
+    "1": {"id": "1", "name": "Burger", "price": 9.99, "quantity": 1},
+    "2": {"id": "2", "name": "Fries", "price": 3.99, "quantity": 1},
+}
+
+
+def _resolve_items(item_ids):
+    return [_SAMPLE_ITEMS[i] for i in item_ids if i in _SAMPLE_ITEMS]
+
+
+# --- Routes ---
 
 @order_bp.route('/place-order', methods=['POST'])
 def place_order_view():
-    return jsonify({'order_id': '123', 'status': 'Preparing'}), 201
+    data = request.get_json(silent=True) or {}
+    cart = _resolve_items(data.get('items', []))
+    customer = data.get('customer')
+    result = place_order(cart, customer)
+    if result["success"]:
+        return jsonify(result), 201
+    return jsonify(result), 400
+
+
+@order_bp.route('/confirmation/<order_id>', methods=['GET'])
+def confirmation_view(order_id):
+    result = get_confirmation(order_id)
+    if "status" in result:
+        return jsonify(result), 200
+    return jsonify(result), 404
+
+
+@order_bp.route('/cancel-order/<order_id>', methods=['POST'])
+def cancel_order_view(order_id):
+    result = cancel_order(order_id)
+    if result["success"]:
+        return jsonify(result), 200
+    if result.get("error") == "Order not found":
+        return jsonify(result), 404
+    return jsonify(result), 400
