@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Track Order{% endblock %}
+
+{% block content %}
+<h1>Track Your Order</h1>
+<input type="text" id="order-id" placeholder="Enter Order ID">
+<button id="track-btn">Track</button>
+<div id="order-status"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/tracking.js') }}"></script>
+{% endblock %}

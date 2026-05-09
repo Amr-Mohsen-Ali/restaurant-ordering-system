@@ -1,0 +1,11 @@
+{
+  "name": "restaurant-ordering-system",
+  "version": "1.0.0",
+  "description": "Flask Restaurant Ordering System E2E Tests",
+  "devDependencies": {
+    "@playwright/test": "^1.30.0"
+  },
+  "scripts": {
+    "test": "playwright test"
+  }
+}

@@ -1,0 +1,38 @@
+name: CI Tests
+
+on: [push, pull_request]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run pytest
+        run: |
+          export PYTHONPATH="${PWD}:${PYTHONPATH}"
+          pytest --maxfail=1 --disable-warnings -q
+
+  # E2E tests - requires running Flask server
+  # Uncomment after features are implemented and server is running
+  # playwright:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Set up Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '16'
+  #     - name: Install dependencies
+  #       run: npm install
+  #     - name: Install Playwright
+  #       run: npx playwright install --with-deps
+  #     - name: Start Flask server
+  #       run: python app.py &
+  #     - name: Run Playwright tests
+  #       run: npx playwright test
