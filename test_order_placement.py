@@ -1,6 +1,9 @@
+import datetime
+from unittest.mock import patch
+
 import pytest
 
-from order_placement import get_confirmation, place_order
+from order_placement import cancel_order, get_confirmation, place_order
 
 
 @pytest.fixture
@@ -159,4 +162,71 @@ def test_get_confirmation_with_none_id_returns_success_false():
 
 def test_get_confirmation_with_empty_string_id_returns_success_false():
     result = get_confirmation("")
+    assert result["success"] is False
+
+
+# =============================================================================
+# cancel_order
+# =============================================================================
+
+# --- Happy path ---
+
+def test_cancel_order_returns_success_true(placed_order):
+    result = cancel_order(placed_order["order_id"])
+    assert result["success"] is True
+
+
+def test_cancel_order_returns_cancelled_message(placed_order):
+    result = cancel_order(placed_order["order_id"])
+    assert result["message"] == "Order cancelled"
+
+
+# --- 2-minute boundary ---
+
+def test_cancel_order_just_under_2_min_old_returns_success_true(valid_cart, valid_customer):
+    placed = place_order(valid_cart, valid_customer)
+    future = datetime.datetime.now() + datetime.timedelta(minutes=1, seconds=59)
+    with patch("order_placement._now", return_value=future):
+        result = cancel_order(placed["order_id"])
+    assert result["success"] is True
+
+
+def test_cancel_order_at_exactly_2_min_old_returns_success_true(valid_cart, valid_customer):
+    placed = place_order(valid_cart, valid_customer)
+    future = datetime.datetime.now() + datetime.timedelta(minutes=2)
+    with patch("order_placement._now", return_value=future):
+        result = cancel_order(placed["order_id"])
+    assert result["success"] is True
+
+
+def test_cancel_order_just_over_2_min_old_returns_success_false(valid_cart, valid_customer):
+    placed = place_order(valid_cart, valid_customer)
+    future = datetime.datetime.now() + datetime.timedelta(minutes=2, seconds=1)
+    with patch("order_placement._now", return_value=future):
+        result = cancel_order(placed["order_id"])
+    assert result["success"] is False
+
+
+def test_cancel_order_just_over_2_min_old_returns_cannot_cancel_error(valid_cart, valid_customer):
+    placed = place_order(valid_cart, valid_customer)
+    future = datetime.datetime.now() + datetime.timedelta(minutes=2, seconds=1)
+    with patch("order_placement._now", return_value=future):
+        result = cancel_order(placed["order_id"])
+    assert result["error"] == "Cannot cancel confirmed order"
+
+
+# --- Not found / invalid input ---
+
+def test_cancel_order_with_unknown_id_returns_success_false():
+    result = cancel_order("ORD-99999999")
+    assert result["success"] is False
+
+
+def test_cancel_order_with_none_id_returns_success_false():
+    result = cancel_order(None)
+    assert result["success"] is False
+
+
+def test_cancel_order_with_empty_string_id_returns_success_false():
+    result = cancel_order("")
     assert result["success"] is False
