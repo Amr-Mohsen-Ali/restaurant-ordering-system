@@ -33,6 +33,11 @@ def test_place_order_returns_estimated_time_of_25(valid_cart, valid_customer):
     assert result["estimated_time"] == 25
 
 
+def test_place_order_returns_status_confirmed(valid_cart, valid_customer):
+    result = place_order(valid_cart, valid_customer)
+    assert result["status"] == "confirmed"
+
+
 # --- Empty cart ---
 
 def test_place_order_with_empty_cart_returns_success_false(valid_customer):
