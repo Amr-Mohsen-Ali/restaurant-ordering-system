@@ -1,5 +1,14 @@
+import datetime
+
+CANCEL_WINDOW = datetime.timedelta(minutes=2)
+
 _order_counter = 1042
 _orders = {}
+_placed_at = {}
+
+
+def _now():
+    return datetime.datetime.now()
 
 
 def place_order(cart_items, customer_info):
@@ -24,6 +33,7 @@ def place_order(cart_items, customer_info):
         "estimated_time": 25,
         "status": "confirmed",
     }
+    _placed_at[order_id] = _now()
 
     return {
         "success": True,
@@ -36,3 +46,14 @@ def get_confirmation(order_id):
     if not order_id or order_id not in _orders:
         return {"success": False, "error": "Order not found"}
     return _orders[order_id]
+
+
+def cancel_order(order_id):
+    if not order_id or order_id not in _orders:
+        return {"success": False, "error": "Order not found"}
+
+    age = _now() - _placed_at[order_id]
+    if age > CANCEL_WINDOW:
+        return {"success": False, "error": "Cannot cancel confirmed order"}
+
+    return {"success": True, "message": "Order cancelled"}
