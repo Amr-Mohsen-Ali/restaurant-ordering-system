@@ -4,7 +4,27 @@
 
 {% block content %}
 <h1>Menu</h1>
-<div id="menu-items"></div>
+
+<div id="filters">
+    <button class="filter-btn active" data-category="">All</button>
+    {% for category in categories %}
+    <button class="filter-btn" data-category="{{ category }}">{{ category }}</button>
+    {% endfor %}
+    <button id="clear-filter">Clear Filter</button>
+</div>
+
+<div id="menu-items">
+    {% for item in items %}
+    <div class="menu-item {% if not item.available %}unavailable{% endif %}">
+        <h3>{{ item.name }}</h3>
+        <p class="price">${{ "%.2f"|format(item.price) }}</p>
+        <p class="ingredients"><strong>Ingredients:</strong> {{ item.ingredients | join(", ") }}</p>
+        {% if not item.available %}
+        <span class="badge unavailable-badge">Not Available</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
 {% endblock %}
 
 {% block scripts %}

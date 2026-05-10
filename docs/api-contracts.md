@@ -3,17 +3,26 @@
 ## Menu
 
 ### GET /menu
-Returns all menu items.
+Renders the menu page (HTML).
+
+### GET /api/menu
+Returns all menu items. Supports optional `?category=` filter.
 
 **Response (200)**
 ```json
 {
   "items": [
-    {"id": "1", "name": "Burger", "price": 9.99, "category": "Main"},
-    {"id": "2", "name": "Fries", "price": 3.99, "category": "Side"}
+    {"id": "1", "name": "Margherita Pizza", "price": 11.99, "category": "Main", "ingredients": ["Tomato", "Mozzarella", "Basil"], "available": true},
+    {"id": "2", "name": "French Fries", "price": 3.99, "category": "Side", "ingredients": ["Potatoes", "Salt", "Oil"], "available": true}
   ]
 }
 ```
+
+**Query Parameters**
+
+| Param | Type | Description |
+|-------|------|-------------|
+| category | string | Filter items by category (Main, Side, Dessert, Drink) |
 
 ## Cart
 
