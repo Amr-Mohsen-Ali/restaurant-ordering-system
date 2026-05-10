@@ -3,10 +3,19 @@
 {% block title %}Cart{% endblock %}
 
 {% block content %}
-<h1>Your Cart</h1>
-<div id="cart-items"></div>
-<div id="cart-total"></div>
-<a href="/checkout">Proceed to Checkout</a>
+<div class="cart-section">
+    <h2>Your Cart 🛒 <span data-testid="cart-badge">0</span> items</h2>
+    
+    <p data-testid="cart-error-message" style="color:red; display:none; font-weight:bold;"></p>
+    <p data-testid="cart-empty-message">Your cart is empty</p>
+
+    <div id="cart-items" data-testid="cart-items-container" style="display:none;">
+        </div>
+
+    <hr>
+    <h3>Total: <span data-testid="cart-total">0.00</span></h3>
+    <a href="/checkout" class="btn">Proceed to Checkout</a>
+</div>
 {% endblock %}
 
 {% block scripts %}
