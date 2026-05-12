@@ -3,18 +3,21 @@
 {% block title %}Cart{% endblock %}
 
 {% block content %}
-<div class="cart-section">
-    <h2>Your Cart 🛒 <span data-testid="cart-badge">0</span> items</h2>
+<div class="container">
+    <div class="cart-section">
+        <h2>Your Cart 🛒</h2>
 
-    <p data-testid="cart-error-message" style="color:red; display:none; font-weight:bold;"></p>
-    <p data-testid="cart-empty-message">Your cart is empty</p>
+        <div id="cart-message" class="cart-message" role="status" aria-live="polite" hidden></div>
 
-    <div id="cart-items" data-testid="cart-items-container" style="display:none;">
+        <div class="cart-items" id="cartItemsContainer">
+            <p class="empty-cart" id="emptyCartMessage">Your cart is empty</p>
+        </div>
+
+        <div class="cart-total">
+            <h3>Total: <span id="cartTotal">0.00</span></h3>
+            <a href="/checkout" class="btn" id="checkoutBtn" style="display: none;">Proceed to Checkout</a>
+        </div>
     </div>
-
-    <hr>
-    <h3>Total: $<span data-testid="cart-total">0.00</span></h3>
-    <a href="/checkout" class="btn">Proceed to Checkout</a>
 </div>
 {% endblock %}
 
@@ -25,38 +28,52 @@ document.addEventListener('DOMContentLoaded', async function() {
     const resp = await fetch('/cart/data');
     const cart = await resp.json();
 
-    const badge = document.querySelector('[data-testid="cart-badge"]');
-    const totalEl = document.querySelector('[data-testid="cart-total"]');
-    const emptyMsg = document.querySelector('[data-testid="cart-empty-message"]');
-    const itemsContainer = document.getElementById('cart-items');
+    const badge = document.getElementById('cartBadge');
+    const totalEl = document.getElementById('cartTotal');
+    const emptyMsg = document.getElementById('emptyCartMessage');
+    const itemsContainer = document.getElementById('cartItemsContainer');
+    const checkoutBtn = document.getElementById('checkoutBtn');
 
     if (cart.items && cart.items.length > 0) {
         badge.innerText = cart.items.length;
         totalEl.innerText = cart.total.toFixed(2);
         emptyMsg.style.display = 'none';
-        itemsContainer.style.display = 'block';
+        checkoutBtn.style.display = 'inline-block';
 
-        cart.items.forEach(item => {
+        cart.items.forEach((item, index) => {
             const div = document.createElement('div');
             div.className = 'cart-item';
-            div.style.display = 'flex';
-            div.style.justifyContent = 'space-between';
-            div.style.alignItems = 'center';
-            div.style.padding = '10px';
-            div.style.borderBottom = '1px solid #ccc';
             div.innerHTML = `
-                <p style="margin: 0;"><strong>${item.name || item.item_id}</strong></p>
-                <div style="display: flex; align-items: center;">
-                    <button onclick="updateCartItem('${item.item_id}', 'decrease')" style="padding: 2px 8px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background: #eee;">-</button>
-                    <span style="margin: 0 10px; min-width: 20px; text-align: center;">${item.quantity}</span>
-                    <button onclick="updateCartItem('${item.item_id}', 'increase')" style="padding: 2px 8px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background: #eee;">+</button>
+                <div class="cart-item-info">
+                    <h4>${item.name || item.item_id}</h4>
+                    <p>${item.price.toFixed(2)} x ${item.quantity}</p>
                 </div>
-                <p style="margin: 0; min-width: 60px; text-align: right;">$${(item.price * item.quantity).toFixed(2)}</p>
-                <button onclick="updateCartItem('${item.item_id}', 'remove')" style="padding: 4px 8px; color: white; background: #b03a3a; border: none; border-radius: 4px; cursor: pointer;">Remove</button>
+                <div class="cart-item-actions">
+                    <button onclick="updateQuantity('${item.item_id}', 'decrease')">-</button>
+                    <span>${item.quantity}</span>
+                    <button onclick="updateQuantity('${item.item_id}', 'increase')">+</button>
+                    <button onclick="updateQuantity('${item.item_id}', 'remove')" style="color: red;">X</button>
+                </div>
             `;
             itemsContainer.appendChild(div);
         });
     }
 });
+
+async function updateQuantity(itemId, action) {
+    try {
+        const response = await fetch('/cart/update', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ item_id: itemId, action: action })
+        });
+        const data = await response.json();
+        if (data.success) {
+            location.reload();
+        }
+    } catch (error) {
+        console.error('Update failed:', error);
+    }
+}
 </script>
 {% endblock %}

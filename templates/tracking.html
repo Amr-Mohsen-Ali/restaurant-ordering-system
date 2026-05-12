@@ -3,22 +3,22 @@
 {% block title %}Order Tracking{% endblock %}
 
 {% block content %}
-<main class="tracking-page">
-    <section class="tracking-panel" aria-labelledby="tracking-title">
-        <h1 id="tracking-title">Order Tracking</h1>
+<div class="tracking-page">
+    <div class="tracking-panel">
+        <h1>Order Tracking</h1>
         <p>Enter your order ID to see the latest delivery status.</p>
 
-        <form id="trackingForm">
+        <form id="trackingForm" class="tracking-form">
             <label for="orderId">Order ID</label>
             <div class="input-row">
-                <input id="orderId" name="orderId" type="text" autocomplete="off" placeholder="Example: 123">
-                <button id="trackButton" type="submit">Track</button>
+                <input id="orderId" name="orderId" type="text" autocomplete="off" placeholder="Example: 1000">
+                <button id="trackButton" type="submit" class="btn">Track</button>
             </div>
         </form>
 
         <div id="result" role="status" aria-live="polite">Waiting for an order ID.</div>
 
-        <div class="status-progress" aria-label="Order progress">
+        <div class="status-progress" aria-label="Order progress" id="statusProgress" style="display: none;">
             <div class="status-step" data-status-step="Preparing">
                 <span class="status-dot"></span>
                 <span>Preparing</span>
@@ -38,8 +38,8 @@
         <button id="advanceButton" class="secondary-button" type="button" hidden>
             Advance Status
         </button>
-    </section>
-</main>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}

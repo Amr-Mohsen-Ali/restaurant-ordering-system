@@ -3,50 +3,56 @@
 {% block title %}Menu{% endblock %}
 
 {% block content %}
-<h1>Menu</h1>
-
-<div id="cart-message" class="cart-message" role="status" aria-live="polite" hidden></div>
-
-<div id="filters">
-    <button class="filter-btn active" data-category="">All</button>
-    {% for category in categories %}
-    <button class="filter-btn" data-category="{{ category }}">{{ category }}</button>
-    {% endfor %}
-    <button id="clear-filter">Clear Filter</button>
-</div>
-
-<div id="menu-items">
-    {% for item in items %}
-    <div class="menu-item {% if not item.available %}unavailable{% endif %}">
-        <h3>{{ item.name }}</h3>
-        <p class="price">${{ "%.2f"|format(item.price) }}</p>
-        <p class="ingredients"><strong>Ingredients:</strong> {{ item.ingredients | join(", ") }}</p>
-        {% if not item.available %}
-        <span class="badge unavailable-badge">Not Available</span>
-        {% endif %}
-        <div class="menu-cart-actions">
-            <label for="quantity-{{ item.id }}">Qty</label>
-            <input
-                id="quantity-{{ item.id }}"
-                class="cart-quantity"
-                type="number"
-                min="1"
-                max="20"
-                value="1"
-                {% if not item.available %}disabled{% endif %}
-            >
-<button
-                class="add-to-cart-btn"
-                data-item-id="{{ item.id }}"
-                data-item-name="{{ item.name }}"
-                data-price="{{ item.price }}"
-                {% if not item.available %}disabled{% endif %}
-            >
-                Add to Cart
-            </button>
-        </div>
+<div class="container">
+    <div class="heading">
+        <span>Our Menu</span>
+        <h3>Popular Dishes</h3>
     </div>
-    {% endfor %}
+
+    <div id="cart-message" class="cart-message" role="status" aria-live="polite" hidden></div>
+
+    <div class="menu-filters">
+        <button class="filter-btn active" data-category="">All</button>
+        {% for category in categories %}
+        <button class="filter-btn" data-category="{{ category }}">{{ category }}</button>
+        {% endfor %}
+        <button id="clear-filter" class="filter-btn">Clear</button>
+    </div>
+
+    <div id="menu-items" class="menu-grid">
+        {% for item in items %}
+        <div class="menu-item {% if not item.available %}unavailable{% endif %}">
+            <img src="{{ item.image }}" alt="{{ item.name }}">
+            <h3>{{ item.name }}</h3>
+            <p class="price">{{ "%.2f"|format(item.price) }}</p>
+            <p class="ingredients"><strong>Ingredients:</strong> {{ item.ingredients | join(", ") }}</p>
+            {% if not item.available %}
+            <span class="unavailable-badge">Not Available</span>
+            {% endif %}
+            <div class="menu-cart-actions">
+                <label for="quantity-{{ item.id }}">Qty</label>
+                <input
+                    id="quantity-{{ item.id }}"
+                    class="cart-quantity"
+                    type="number"
+                    min="1"
+                    max="20"
+                    value="1"
+                    {% if not item.available %}disabled{% endif %}
+                >
+                <button
+                    class="add-to-cart-btn"
+                    data-item-id="{{ item.id }}"
+                    data-item-name="{{ item.name }}"
+                    data-price="{{ item.price }}"
+                    {% if not item.available %}disabled{% endif %}
+                >
+                    Add to Cart
+                </button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}
 

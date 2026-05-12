@@ -39,7 +39,7 @@ function showOrderDetails(order) {
   orderDetails.innerHTML = `
     <h2>Order Details</h2>
     <p><strong>Items:</strong> ${itemList}</p>
-    <p><strong>Total:</strong> $${Number(order.total).toFixed(2)}</p>
+    <p><strong>Total:</strong> ${Number(order.total).toFixed(2)}</p>
   `;
 }
 

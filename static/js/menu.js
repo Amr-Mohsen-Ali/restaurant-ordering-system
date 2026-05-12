@@ -59,8 +59,9 @@ function renderCartActions(item) {
                     const div = document.createElement('div');
                     div.className = 'menu-item' + (item.available ? '' : ' unavailable');
                     div.innerHTML = `
+                        <img src="${item.image}" alt="${escapeHtml(item.name)}">
                         <h3>${escapeHtml(item.name)}</h3>
-                        <p class="price">$${item.price.toFixed(2)}</p>
+                        <p class="price">${item.price.toFixed(2)}</p>
                         <p class="ingredients"><strong>Ingredients:</strong> ${item.ingredients.map(escapeHtml).join(', ')}</p>
                         ${item.available ? '' : '<span class="badge unavailable-badge">Not Available</span>'}
                         ${renderCartActions(item)}
@@ -126,6 +127,9 @@ const response = await fetch('/cart/add', {
             }
 
             showCartMessage('Added to cart!');
+            if (typeof window.updateCartBadge === 'function') {
+                window.updateCartBadge();
+            }
         } catch (error) {
             showCartMessage('Could not add item to cart.', true);
         } finally {

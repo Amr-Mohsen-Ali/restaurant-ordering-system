@@ -2,156 +2,95 @@
 
 {% block title %}Checkout{% endblock %}
 
-{% block extra_head %}
-<style>
-  .checkout-container {
-    max-width: 640px;
-    margin: 2rem auto;
-    padding: 0 1rem;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  }
-  .checkout-container h1 { margin-top: 0; }
-  .item-list { list-style: none; padding: 0; margin: 0 0 1rem 0; }
-  .item-list li {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid #e6e6e6;
-  }
-  .item-list li:last-child { border-bottom: none; }
-  .total-row {
-    font-weight: 600;
-    text-align: right;
-    margin: 1rem 0;
-    font-size: 1.1rem;
-  }
-  .empty-cart {
-    color: #777;
-    font-style: italic;
-    padding: 1.5rem 0;
-    text-align: center;
-  }
-  .field { margin-bottom: 1rem; }
-  .field label { display: block; margin-bottom: 0.25rem; font-weight: 600; }
-  .field input {
-    width: 100%;
-    padding: 0.5rem;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 1rem;
-  }
-  .btn {
-    padding: 0.6rem 1.2rem;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-  }
-  .btn-primary { background: #2c7a2c; color: #fff; }
-  .btn-primary:disabled { background: #aaa; cursor: not-allowed; }
-  .btn-cancel { background: #b03a3a; color: #fff; }
-  .alert {
-    padding: 0.75rem 1rem;
-    border-radius: 4px;
-    margin: 0 0 1rem 0;
-  }
-  .alert-error { background: #fde2e2; border: 1px solid #b03a3a; color: #7a1f1f; }
-  .alert-success { background: #e2f6e2; border: 1px solid #2c7a2c; color: #1f5e1f; }
-  .meta-row { margin: 0.4rem 0; }
-  .demo-links { margin-top: 1.5rem; font-size: 0.85rem; color: #888; }
-  .demo-links a { color: #888; margin-right: 0.75rem; }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="checkout-container">
+<div class="container">
+    <div class="checkout-container">
+        {% if view == "confirmation" %}
+            <h1>Order Confirmed!</h1>
+            <div class="order-summary" style="background: #d5f5e3; text-align: center;">
+                <p style="font-size: 1.6rem; color: var(--green);">Your order has been placed successfully!</p>
+            </div>
 
-{% if view == "confirmation" %}
-  <h1>Order Confirmed</h1>
-  <div class="alert alert-success">Your order has been placed successfully.</div>
+            <p class="meta-row" style="font-size: 1.6rem; text-align: center;"><strong>Order ID:</strong> {{ order.id }}</p>
+            <p style="text-align: center; margin: 1rem 0;"><a href="/tracking?order_id={{ order.id }}" class="btn">Track Your Order</a></p>
+            <p class="meta-row" style="text-align: center;"><strong>Estimated time:</strong> {{ order.estimated_time }} minutes</p>
+            <p class="meta-row" style="text-align: center;"><strong>Status:</strong> {{ order.status }}</p>
 
-  {% if cancel_error %}
-    <div class="alert alert-error">{{ cancel_error }}</div>
-  {% endif %}
+            <h3 style="margin-top: 2rem;">Order Items</h3>
+            <div class="order-summary">
+                {% for item in order["items"] %}
+                <div class="order-summary-item">
+                    <span>{{ item.name or item.item_id }} x {{ item.quantity }}</span>
+                    <span>{{ "%.2f"|format(item.price * item.quantity) }}</span>
+                </div>
+                {% endfor %}
+                <div class="order-summary-item" style="border-top: 2px solid var(--dark); margin-top: 1rem; padding-top: 1rem;">
+                    <strong>Total</strong>
+                    <strong style="color: var(--green);">{{ "%.2f"|format(order.total) }}</strong>
+                </div>
+            </div>
 
-  <p class="meta-row"><strong>Order ID:</strong> {{ order.id }}</p>
-  <p class="meta-row"><a href="/tracking?order_id={{ order.id }}">Track your order</a></p>
-  <p class="meta-row"><strong>Estimated time:</strong> {{ order.estimated_time }} minutes</p>
-  <p class="meta-row"><strong>Status:</strong> {{ order.status }}</p>
+            <form method="POST" action="{{ url_for('order.checkout_cancel', order_id=order.id) }}" style="text-align: center;">
+                <button type="submit" class="btn" style="background: #e74c3c;">Cancel Order</button>
+            </form>
 
-  <h2>Items</h2>
-  <ul class="item-list">
-    {% for item in order["items"] %}
-      <li>
-        <span>{{ item.name or item.item_id }} &times; {{ item.quantity }}</span>
-        <span>${{ "%.2f"|format(item.price * item.quantity) }}</span>
-      </li>
-    {% endfor %}
-  </ul>
-  <p class="total-row">Total: ${{ "%.2f"|format(order.total) }}</p>
+            <p style="text-align: center; margin-top: 2rem;"><a href="/menu" class="btn">Order More</a></p>
 
-  <form method="POST" action="{{ url_for('order.checkout_cancel', order_id=order.id) }}">
-    <button type="submit" class="btn btn-cancel">Cancel Order</button>
-  </form>
+        {% elif view == "cancelled" %}
+            <h1>Order Cancelled</h1>
+            <div class="order-summary" style="background: #fadbd8; text-align: center;">
+                <p style="font-size: 1.6rem;">Order <strong>{{ order_id }}</strong> has been cancelled.</p>
+            </div>
+            <p style="text-align: center; margin-top: 2rem;"><a href="/menu" class="btn">Back to Menu</a></p>
 
-  <p style="margin-top:1.5rem;"><a href="{{ url_for('order.checkout_view') }}">&larr; Place another order</a></p>
+        {% elif view == "error" %}
+            <h1>Something Went Wrong</h1>
+            <div class="order-summary" style="background: #fadbd8; text-align: center;">
+                <p style="font-size: 1.6rem; color: #e74c3c;">{{ error }}</p>
+            </div>
+            <p style="text-align: center; margin-top: 2rem;"><a href="/checkout" class="btn">Try Again</a></p>
 
-{% elif view == "cancelled" %}
-  <h1>Order Cancelled</h1>
-  <div class="alert alert-success">
-    Order <strong>{{ order_id }}</strong> has been cancelled. You can <a href="/tracking?order_id={{ order_id }}">track order</a> to see status.
-  </div>
-  <p><a href="{{ url_for('order.checkout_view') }}">&larr; Place another order</a></p>
+        {% else %}
+            <h1>Checkout</h1>
 
-{% elif view == "error" %}
-  <h1>Something went wrong</h1>
-  <div class="alert alert-error">{{ error }}</div>
-  <p><a href="{{ url_for('order.checkout_view') }}">&larr; Back to checkout</a></p>
+            {% if error %}
+            <div class="order-summary" style="background: #fadbd8;">
+                <p style="color: #e74c3c;">{{ error }}</p>
+            </div>
+            {% endif %}
 
-{% else %}
-  <h1>Checkout</h1>
+            <div class="order-summary">
+                <h3>Your Cart</h3>
+                {% if cart and cart|length > 0 %}
+                    {% for item in cart %}
+                    <div class="order-summary-item">
+                        <span>{{ item.name or item.item_id }} x {{ item.quantity }}</span>
+                        <span>{{ "%.2f"|format(item.price * item.quantity) }}</span>
+                    </div>
+                    {% endfor %}
+                    <div class="order-summary-item" style="border-top: 2px solid var(--dark); margin-top: 1rem; padding-top: 1rem;">
+                        <strong>Total</strong>
+                        <strong style="color: var(--green);">{{ "%.2f"|format(cart_total) }}</strong>
+                    </div>
+                {% else %}
+                    <p class="empty-cart">Your cart is empty</p>
+                {% endif %}
+            </div>
 
-  {% if error %}
-    <div class="alert alert-error">{{ error }}</div>
-  {% endif %}
-
-  <h2>Your cart</h2>
-  {% if cart and cart|length > 0 %}
-    <ul class="item-list">
-      {% for item in cart %}
-        <li>
-          <span>{{ item.name }} &times; {{ item.quantity }}</span>
-          <span>${{ "%.2f"|format(item.price * item.quantity) }}</span>
-        </li>
-      {% endfor %}
-    </ul>
-    <p class="total-row">Total: ${{ "%.2f"|format(cart_total) }}</p>
-  {% else %}
-    <p class="empty-cart">Your cart is empty.</p>
-  {% endif %}
-
-  <form method="POST" action="{{ url_for('order.checkout_submit') }}">
-    <div class="field">
-      <label for="name">Name</label>
-      <input type="text" id="name" name="name" value="{{ form_name or '' }}">
+            <form method="POST" action="{{ url_for('order.checkout_submit') }}" class="checkout-form">
+                <div class="form-group">
+                    <label for="name">Your Name</label>
+                    <input type="text" id="name" name="name" value="{{ form_name or '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label for="address">Delivery Address</label>
+                    <input type="text" id="address" name="address" value="{{ form_address or '' }}" required>
+                </div>
+                <button type="submit" class="btn" {% if not cart or cart|length == 0 %}disabled{% endif %}>
+                    Place Order
+                </button>
+            </form>
+        {% endif %}
     </div>
-    <div class="field">
-      <label for="address">Address</label>
-      <input type="text" id="address" name="address" value="{{ form_address or '' }}">
-    </div>
-    <button
-      type="submit"
-      class="btn btn-primary"
-      {% if not cart or cart|length == 0 %}disabled{% endif %}
-    >Place Order</button>
-  </form>
-
-  <div class="demo-links">
-    <a href="{{ url_for('order.checkout_view') }}">Demo: with items</a>
-    <a href="{{ url_for('order.checkout_view', empty='1') }}">Demo: empty cart</a>
-  </div>
-{% endif %}
-
 </div>
 {% endblock %}
