@@ -1,12 +1,45 @@
 {% extends "base.html" %}
 
-{% block title %}Track Order{% endblock %}
+{% block title %}Order Tracking{% endblock %}
 
 {% block content %}
-<h1>Track Your Order</h1>
-<input type="text" id="order-id" placeholder="Enter Order ID">
-<button id="track-btn">Track</button>
-<div id="order-status"></div>
+<main class="tracking-page">
+    <section class="tracking-panel" aria-labelledby="tracking-title">
+        <h1 id="tracking-title">Order Tracking</h1>
+        <p>Enter your order ID to see the latest delivery status.</p>
+
+        <form id="trackingForm">
+            <label for="orderId">Order ID</label>
+            <div class="input-row">
+                <input id="orderId" name="orderId" type="text" autocomplete="off" placeholder="Example: 123">
+                <button id="trackButton" type="submit">Track</button>
+            </div>
+        </form>
+
+        <div id="result" role="status" aria-live="polite">Waiting for an order ID.</div>
+
+        <div class="status-progress" aria-label="Order progress">
+            <div class="status-step" data-status-step="Preparing">
+                <span class="status-dot"></span>
+                <span>Preparing</span>
+            </div>
+            <div class="status-step" data-status-step="Out for Delivery">
+                <span class="status-dot"></span>
+                <span>Out for Delivery</span>
+            </div>
+            <div class="status-step" data-status-step="Delivered">
+                <span class="status-dot"></span>
+                <span>Delivered</span>
+            </div>
+        </div>
+
+        <div id="orderDetails" class="order-details" hidden></div>
+
+        <button id="advanceButton" class="secondary-button" type="button" hidden>
+            Advance Status
+        </button>
+    </section>
+</main>
 {% endblock %}
 
 {% block scripts %}
