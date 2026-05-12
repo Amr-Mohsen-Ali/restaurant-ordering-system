@@ -28,15 +28,15 @@ def test_tracking_page_loads(client):
     assert response.status_code == 200
     assert b"Order Tracking" in response.data
 
-<<<<<<< HEAD
+    # moved below
     order_response = client.post('/place-order', json={
         'items': ['1'],
         'total': 9.99,
         'customer': {'name': 'Gaber', 'address': '123 Main St'},
     })
     assert order_response.status_code == 201, "Order should be created"
-=======
->>>>>>> feature/amr-tracking
+
+
 
 def test_api_returns_status_for_valid_order(client):
     response = client.get("/track/123")
