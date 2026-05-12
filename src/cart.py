@@ -9,7 +9,6 @@ current_cart = {
     "total": 0.00
 }
 
-
 # cart.py
 # Linked requirements: REQ-C-01, REQ-C-02, REQ-C-03
 # Linked scenarios:    SC-CART-01, SC-CART-02, SC-CART-03
@@ -91,6 +90,20 @@ class Cart:
             "cart_item_count": self.cart_item_count,
             "cart_total":      self.cart_total,
         }
+
+
+def add_to_cart(cart, item):
+    """Append an item to the cart. Returns the updated cart.
+
+    cart: list of cart-item dicts (each having id, name, price, quantity).
+    item: dict to add.
+
+    Minimal pure helper used by integration tests; full cart behaviour
+    (quantity merging, removal, persistence) is owned by the cart feature.
+    """
+    cart.append(item)
+    return cart
+
 
 # 1. This loads your beautiful HTML page when someone visits the /cart URL
 @cart_bp.route('/cart', methods=['GET'])
