@@ -2,12 +2,14 @@ import datetime
 
 from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 
+from src.cart import current_cart
+from src.data.orders import ORDERS
+
 order_bp = Blueprint('order', __name__)
 
 CANCEL_WINDOW = datetime.timedelta(minutes=2)
 
-_order_counter = 1042
-_orders = {}
+_order_counter = 1000
 _placed_at = {}
 
 
@@ -25,36 +27,36 @@ def place_order(cart_items, customer_info):
         return {"success": False, "error": "Missing customer info"}
 
     global _order_counter
-    order_id = f"ORD-{_order_counter}"
+    order_id = str(_order_counter)
     _order_counter += 1
 
     total = sum(item["price"] * item["quantity"] for item in cart_items)
 
-    _orders[order_id] = {
-        "order_id": order_id,
+    ORDERS[order_id] = {
+        "id": order_id,
         "items": cart_items,
         "total": total,
         "estimated_time": 25,
-        "status": "confirmed",
+        "status": "Preparing",
     }
     _placed_at[order_id] = _now()
 
     return {
         "success": True,
         "order_id": order_id,
-        "status": "confirmed",
+        "status": "Preparing",
         "estimated_time": 25,
     }
 
 
 def get_confirmation(order_id):
-    if not order_id or order_id not in _orders:
+    if not order_id or order_id not in ORDERS:
         return {"success": False, "error": "Order not found"}
-    return _orders[order_id]
+    return ORDERS[order_id]
 
 
 def cancel_order(order_id):
-    if not order_id or order_id not in _orders:
+    if not order_id or order_id not in ORDERS:
         return {"success": False, "error": "Order not found"}
 
     age = _now() - _placed_at[order_id]
@@ -119,30 +121,32 @@ def cancel_order_view(order_id):
 
 @order_bp.route('/checkout', methods=['GET'])
 def checkout_view():
-    cart = [] if request.args.get('empty') == '1' else _demo_cart()
+    cart = [] if request.args.get('empty') == '1' else current_cart["items"]
     return render_template(
         "checkout.html",
         view="cart",
         cart=cart,
-        cart_total=_cart_total(cart),
+        cart_total=current_cart["total"],
     )
 
 
 @order_bp.route('/checkout', methods=['POST'])
 def checkout_submit():
-    cart = _demo_cart()
+    cart = current_cart["items"]
     customer = {
         "name": request.form.get("name", "").strip(),
         "address": request.form.get("address", "").strip(),
     }
     result = place_order(cart, customer)
     if result["success"]:
+        current_cart["items"] = []
+        current_cart["total"] = 0.00
         return redirect(url_for("order.checkout_confirmation", order_id=result["order_id"]))
     return render_template(
         "checkout.html",
         view="cart",
         cart=cart,
-        cart_total=_cart_total(cart),
+        cart_total=current_cart["total"],
         error=result["error"],
         form_name=customer["name"],
         form_address=customer["address"],

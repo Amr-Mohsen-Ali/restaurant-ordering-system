@@ -75,7 +75,8 @@
     <div class="alert alert-error">{{ cancel_error }}</div>
   {% endif %}
 
-  <p class="meta-row"><strong>Order ID:</strong> {{ order.order_id }}</p>
+  <p class="meta-row"><strong>Order ID:</strong> {{ order.id }}</p>
+  <p class="meta-row"><a href="/tracking?order_id={{ order.id }}">Track your order</a></p>
   <p class="meta-row"><strong>Estimated time:</strong> {{ order.estimated_time }} minutes</p>
   <p class="meta-row"><strong>Status:</strong> {{ order.status }}</p>
 
@@ -83,14 +84,14 @@
   <ul class="item-list">
     {% for item in order["items"] %}
       <li>
-        <span>{{ item.name }} &times; {{ item.quantity }}</span>
+        <span>{{ item.name or item.item_id }} &times; {{ item.quantity }}</span>
         <span>${{ "%.2f"|format(item.price * item.quantity) }}</span>
       </li>
     {% endfor %}
   </ul>
   <p class="total-row">Total: ${{ "%.2f"|format(order.total) }}</p>
 
-  <form method="POST" action="{{ url_for('order.checkout_cancel', order_id=order.order_id) }}">
+  <form method="POST" action="{{ url_for('order.checkout_cancel', order_id=order.id) }}">
     <button type="submit" class="btn btn-cancel">Cancel Order</button>
   </form>
 
@@ -99,7 +100,7 @@
 {% elif view == "cancelled" %}
   <h1>Order Cancelled</h1>
   <div class="alert alert-success">
-    Order <strong>{{ order_id }}</strong> has been cancelled.
+    Order <strong>{{ order_id }}</strong> has been cancelled. You can <a href="/tracking?order_id={{ order_id }}">track order</a> to see status.
   </div>
   <p><a href="{{ url_for('order.checkout_view') }}">&larr; Place another order</a></p>
 

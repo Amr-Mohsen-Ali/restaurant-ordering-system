@@ -125,3 +125,12 @@ advanceButton.addEventListener("click", async () => {
     advanceButton.disabled = false;
   }
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const orderIdParam = urlParams.get('order_id');
+  if (orderIdParam) {
+    orderInput.value = orderIdParam;
+    form.dispatchEvent(new Event("submit", { cancelable: true, bubbles: true }));
+  }
+});

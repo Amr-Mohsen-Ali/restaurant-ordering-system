@@ -2,12 +2,15 @@ from flask import Blueprint, jsonify, request, render_template
 
 cart_bp = Blueprint('cart', __name__)
 
-# This holds your cart data while the server runs
-# (If your TDD Cart class is in another file, this mocks the connection for the UI)
 current_cart = {
     "items": [],
     "total": 0.00
 }
+
+
+def get_cart():
+    """Return current cart data."""
+    return current_cart
 
 # cart.py
 # Linked requirements: REQ-C-01, REQ-C-02, REQ-C-03
@@ -112,18 +115,26 @@ def view_cart():
 
 # 2. This is the exact route your cart.js file is looking for!
 @cart_bp.route('/cart/add', methods=['POST'])
-def add_to_cart():
+def add_to_cart_route():
     data = request.json
     item_id = data.get('item_id')
+    item_name = data.get('item_name', item_id)
     price = float(data.get('price', 0))
     quantity = int(data.get('quantity', 1))
 
-    # Reject negative numbers (Your TDD requirement!)
     if quantity < 1:
         return jsonify({"success": False, "error": "Quantity cannot be negative"})
 
-    # Update the cart
-    current_cart['items'].append({"item_id": item_id, "price": price, "quantity": quantity})
+    found = False
+    for item in current_cart['items']:
+        if item['item_id'] == item_id:
+            item['quantity'] += quantity
+            found = True
+            break
+            
+    if not found:
+        current_cart['items'].append({"item_id": item_id, "name": item_name, "price": price, "quantity": quantity})
+        
     current_cart['total'] += (price * quantity)
 
     # Send the success message and new total back to cart.js
@@ -131,3 +142,38 @@ def add_to_cart():
         "success": True,
         "total": current_cart['total']
     })
+
+
+@cart_bp.route('/cart/update', methods=['POST'])
+def update_cart_item():
+    data = request.json
+    item_id = data.get('item_id')
+    action = data.get('action') # 'increase', 'decrease', 'remove'
+
+    for item in current_cart['items']:
+        if item['item_id'] == item_id:
+            if action == 'increase':
+                item['quantity'] += 1
+                current_cart['total'] += item['price']
+            elif action == 'decrease':
+                if item['quantity'] > 1:
+                    item['quantity'] -= 1
+                    current_cart['total'] -= item['price']
+                else:
+                    current_cart['total'] -= (item['price'] * item['quantity'])
+                    current_cart['items'].remove(item)
+            elif action == 'remove':
+                current_cart['total'] -= (item['price'] * item['quantity'])
+                current_cart['items'].remove(item)
+            break
+
+    # Avoid floating point precision issues and negative totals
+    current_cart['total'] = round(max(0, current_cart['total']), 2)
+
+    return jsonify({"success": True, "total": current_cart['total']})
+
+
+@cart_bp.route('/cart/data', methods=['GET'])
+def get_cart_data():
+    """Return current cart data for checkout page."""
+    return jsonify(current_cart)
