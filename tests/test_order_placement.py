@@ -23,9 +23,9 @@ def test_place_order_returns_success_true(valid_cart, valid_customer):
     assert result["success"] is True
 
 
-def test_place_order_returns_order_id_with_ord_prefix(valid_cart, valid_customer):
+def test_place_order_returns_numeric_order_id(valid_cart, valid_customer):
     result = place_order(valid_cart, valid_customer)
-    assert result["order_id"].startswith("ORD-")
+    assert result["order_id"].isdigit()
 
 
 def test_place_order_returns_estimated_time_of_25(valid_cart, valid_customer):
@@ -33,9 +33,9 @@ def test_place_order_returns_estimated_time_of_25(valid_cart, valid_customer):
     assert result["estimated_time"] == 25
 
 
-def test_place_order_returns_status_confirmed(valid_cart, valid_customer):
+def test_place_order_returns_status_preparing(valid_cart, valid_customer):
     result = place_order(valid_cart, valid_customer)
-    assert result["status"] == "confirmed"
+    assert result["status"] == "Preparing"
 
 
 # --- Empty cart ---
@@ -117,7 +117,7 @@ def placed_order(valid_cart, valid_customer):
 
 def test_get_confirmation_returns_matching_order_id(placed_order):
     result = get_confirmation(placed_order["order_id"])
-    assert result["order_id"] == placed_order["order_id"]
+    assert result["id"] == placed_order["order_id"]
 
 
 def test_get_confirmation_returns_items_from_placed_cart(valid_cart, valid_customer):
@@ -141,20 +141,20 @@ def test_get_confirmation_returns_estimated_time(placed_order):
     assert result["estimated_time"] == 25
 
 
-def test_get_confirmation_returns_status_confirmed(placed_order):
+def test_get_confirmation_returns_status_preparing(placed_order):
     result = get_confirmation(placed_order["order_id"])
-    assert result["status"] == "confirmed"
+    assert result["status"] == "Preparing"
 
 
 # --- Not found ---
 
 def test_get_confirmation_with_unknown_id_returns_success_false():
-    result = get_confirmation("ORD-99999999")
+    result = get_confirmation("99999999")
     assert result["success"] is False
 
 
 def test_get_confirmation_with_unknown_id_returns_not_found_error():
-    result = get_confirmation("ORD-99999999")
+    result = get_confirmation("99999999")
     assert result["error"] == "Order not found"
 
 
@@ -230,7 +230,7 @@ def test_cancel_order_just_over_2_min_old_returns_cannot_cancel_error(valid_cart
 # --- Not found / invalid input ---
 
 def test_cancel_order_with_unknown_id_returns_success_false():
-    result = cancel_order("ORD-99999999")
+    result = cancel_order("99999999")
     assert result["success"] is False
 
 

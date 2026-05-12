@@ -48,9 +48,9 @@ def test_place_order_response_success_is_true(client, valid_request):
     assert response.get_json()["success"] is True
 
 
-def test_place_order_response_status_is_confirmed(client, valid_request):
+def test_place_order_response_status_is_preparing(client, valid_request):
     response = client.post('/place-order', json=valid_request)
-    assert response.get_json()["status"] == "confirmed"
+    assert response.get_json()["status"] == "Preparing"
 
 
 def test_place_order_response_estimated_time_is_25(client, valid_request):
@@ -58,9 +58,9 @@ def test_place_order_response_estimated_time_is_25(client, valid_request):
     assert response.get_json()["estimated_time"] == 25
 
 
-def test_place_order_response_order_id_has_ord_prefix(client, valid_request):
+def test_place_order_response_order_id_is_numeric(client, valid_request):
     response = client.post('/place-order', json=valid_request)
-    assert response.get_json()["order_id"].startswith("ORD-")
+    assert response.get_json()["order_id"].isdigit()
 
 
 # --- POST /place-order — error cases ---
@@ -100,13 +100,13 @@ def test_place_order_with_missing_customer_returns_missing_info_error(client):
 def test_confirmation_happy_path_returns_matching_order_id(client, valid_request):
     placed = client.post('/place-order', json=valid_request).get_json()
     response = client.get(f'/confirmation/{placed["order_id"]}')
-    assert response.get_json()["order_id"] == placed["order_id"]
+    assert response.get_json()["id"] == placed["order_id"]
 
 
-def test_confirmation_happy_path_returns_status_confirmed(client, valid_request):
+def test_confirmation_happy_path_returns_status_preparing(client, valid_request):
     placed = client.post('/place-order', json=valid_request).get_json()
     response = client.get(f'/confirmation/{placed["order_id"]}')
-    assert response.get_json()["status"] == "confirmed"
+    assert response.get_json()["status"] == "Preparing"
 
 
 def test_confirmation_happy_path_returns_estimated_time(client, valid_request):
@@ -116,7 +116,7 @@ def test_confirmation_happy_path_returns_estimated_time(client, valid_request):
 
 
 def test_confirmation_with_unknown_id_returns_not_found_error(client):
-    response = client.get('/confirmation/ORD-99999999')
+    response = client.get('/confirmation/99999999')
     assert response.get_json()["error"] == "Order not found"
 
 
@@ -137,7 +137,7 @@ def test_cancel_order_happy_path_returns_cancelled_message(client, valid_request
 
 
 def test_cancel_order_with_unknown_id_returns_not_found_error(client):
-    response = client.post('/cancel-order/ORD-99999999')
+    response = client.post('/cancel-order/99999999')
     assert response.get_json()["error"] == "Order not found"
 
 
