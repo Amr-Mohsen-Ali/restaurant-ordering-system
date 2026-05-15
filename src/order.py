@@ -2,6 +2,8 @@ import datetime
 
 from flask import Blueprint, jsonify, redirect, render_template, request, url_for
 
+from src import database
+
 order_bp = Blueprint('order', __name__)
 
 CANCEL_WINDOW = datetime.timedelta(minutes=2)
@@ -39,6 +41,11 @@ def place_order(cart_items, customer_info):
     }
     _placed_at[order_id] = _now()
 
+    # Staff-side persistence. Silent no-op if the DB hasn't been
+    # initialised (existing tests don't use the `db` fixture).
+    if database.is_initialized():
+        _persist_order_to_db(order_id, customer_info, cart_items, total)
+
     return {
         "success": True,
         "order_id": order_id,
@@ -62,6 +69,69 @@ def cancel_order(order_id):
         return {"success": False, "error": "Cannot cancel confirmed order"}
 
     return {"success": True, "message": "Order cancelled"}
+
+
+# --- Staff API (DB-backed) ---
+
+def _persist_order_to_db(order_id, customer_info, cart_items, total):
+    """Write a placed order to SQLite for the staff panel.
+
+    Initial staff-facing status is 'pending'; staff advance it through
+    preparing → ready → delivered via update_order_status.
+    """
+    with database.get_db() as conn:
+        conn.execute(
+            "INSERT INTO orders "
+            "(id, customer_name, customer_address, status, total, placed_at) "
+            "VALUES (?, ?, ?, ?, ?, ?)",
+            (
+                order_id,
+                customer_info["name"],
+                customer_info["address"],
+                "pending",
+                total,
+                _now().isoformat(),
+            ),
+        )
+        for item in cart_items:
+            conn.execute(
+                "INSERT INTO order_items "
+                "(order_id, menu_item_id, name, quantity, price) "
+                "VALUES (?, ?, ?, ?, ?)",
+                (
+                    order_id,
+                    item.get("id"),
+                    item["name"],
+                    item["quantity"],
+                    item["price"],
+                ),
+            )
+
+
+def get_all_orders():
+    """Return all orders with customer info and their items.
+
+    Each order dict has: id, customer_name, customer_address, status,
+    total, placed_at (ISO string), items (list of menu_item_id, name,
+    quantity, price). Returns [] when the orders table is empty.
+    """
+    with database.get_db() as conn:
+        order_rows = conn.execute(
+            "SELECT id, customer_name, customer_address, status, total, placed_at "
+            "FROM orders ORDER BY placed_at DESC"
+        ).fetchall()
+
+        result = []
+        for order_row in order_rows:
+            order = dict(order_row)
+            item_rows = conn.execute(
+                "SELECT menu_item_id, name, quantity, price "
+                "FROM order_items WHERE order_id = ?",
+                (order["id"],),
+            ).fetchall()
+            order["items"] = [dict(row) for row in item_rows]
+            result.append(order)
+        return result
 
 
 # --- Item resolution (stub — wire to src/menu.py later) ---
