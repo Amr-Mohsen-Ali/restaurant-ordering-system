@@ -8,6 +8,8 @@ order_bp = Blueprint('order', __name__)
 
 CANCEL_WINDOW = datetime.timedelta(minutes=2)
 
+VALID_STAFF_STATUSES = {"pending", "preparing", "ready", "delivered"}
+
 _order_counter = 1042
 _orders = {}
 _placed_at = {}
@@ -132,6 +134,34 @@ def get_all_orders():
             order["items"] = [dict(row) for row in item_rows]
             result.append(order)
         return result
+
+
+def update_order_status(order_id, new_status):
+    """Advance an order's staff-facing status.
+
+    Validates new_status against VALID_STAFF_STATUSES first (independent
+    of the order's existence), then checks the order exists in the DB,
+    then performs the UPDATE.
+
+    Returns {success: True} on success, or
+    {success: False, error: "Invalid status" | "Order not found"} on
+    validation failure.
+    """
+    if new_status not in VALID_STAFF_STATUSES:
+        return {"success": False, "error": "Invalid status"}
+
+    with database.get_db() as conn:
+        row = conn.execute(
+            "SELECT id FROM orders WHERE id = ?", (order_id,)
+        ).fetchone()
+        if row is None:
+            return {"success": False, "error": "Order not found"}
+
+        conn.execute(
+            "UPDATE orders SET status = ? WHERE id = ?",
+            (new_status, order_id),
+        )
+        return {"success": True}
 
 
 # --- Item resolution (stub — wire to src/menu.py later) ---
