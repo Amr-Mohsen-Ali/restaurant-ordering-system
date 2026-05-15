@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Panel{% endblock %}
+
+{% block extra_head %}
+<style>
+  .staff-container {
+    max-width: 1024px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .staff-container h1 { margin-top: 0; }
+  .user-bar {
+    color: #555;
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+  table.orders {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+  }
+  table.orders th, table.orders td {
+    text-align: left;
+    padding: 0.6rem 0.7rem;
+    border-bottom: 1px solid #e6e6e6;
+    vertical-align: top;
+  }
+  table.orders th {
+    background: #f5f5f5;
+    font-weight: 600;
+  }
+  table.orders ul {
+    margin: 0;
+    padding-left: 1.1rem;
+  }
+  .address {
+    color: #777;
+    font-size: 0.85rem;
+    display: block;
+    margin-top: 0.2rem;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    border-radius: 3px;
+    font-size: 0.85rem;
+    background: #eee;
+    color: #333;
+    text-transform: capitalize;
+  }
+  .status-pending { background: #fff3cd; color: #856404; }
+  .status-preparing { background: #cce5ff; color: #004085; }
+  .status-ready { background: #d4edda; color: #155724; }
+  .status-delivered { background: #d1d3d5; color: #383d41; }
+  .update-form {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+  .update-form select {
+    padding: 0.3rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-transform: capitalize;
+  }
+  .update-form button {
+    padding: 0.35rem 0.8rem;
+    border: none;
+    border-radius: 4px;
+    background: #2c7a2c;
+    color: #fff;
+    cursor: pointer;
+  }
+  .empty-state {
+    text-align: center;
+    color: #888;
+    padding: 2.5rem 0;
+    font-style: italic;
+  }
+  .alert {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin: 0 0 1rem 0;
+  }
+  .alert-error {
+    background: #fde2e2;
+    border: 1px solid #b03a3a;
+    color: #7a1f1f;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="staff-container">
+  <h1>Staff Panel</h1>
+
+  <div class="user-bar">
+    Signed in as <strong>{{ user.username }}</strong> ({{ user.role }})
+  </div>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  {% if orders %}
+    <table class="orders">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Items</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Update</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for order in orders %}
+          <tr>
+            <td>{{ order.id }}</td>
+            <td>
+              {{ order.customer_name }}
+              <span class="address">{{ order.customer_address }}</span>
+            </td>
+            <td>
+              {% if order["items"] %}
+                <ul>
+                  {% for item in order["items"] %}
+                    <li>{{ item.name }} &times; {{ item.quantity }}</li>
+                  {% endfor %}
+                </ul>
+              {% else %}
+                <em style="color:#999;">(no items)</em>
+              {% endif %}
+            </td>
+            <td>${{ "%.2f"|format(order.total) }}</td>
+            <td>
+              <span class="status-badge status-{{ order.status }}">{{ order.status }}</span>
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('order.staff_update') }}" class="update-form">
+                <input type="hidden" name="order_id" value="{{ order.id }}">
+                <select name="status">
+                  {% for s in valid_statuses %}
+                    <option value="{{ s }}" {% if s == order.status %}selected{% endif %}>{{ s }}</option>
+                  {% endfor %}
+                </select>
+                <button type="submit">Update</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty-state">No orders yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

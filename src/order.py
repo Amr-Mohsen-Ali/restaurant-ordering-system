@@ -1,14 +1,15 @@
 import datetime
 
-from flask import Blueprint, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 
 from src import database
+from src.auth import get_current_user, login_required, require_role
 
 order_bp = Blueprint('order', __name__)
 
 CANCEL_WINDOW = datetime.timedelta(minutes=2)
 
-VALID_STAFF_STATUSES = {"pending", "preparing", "ready", "delivered"}
+VALID_STAFF_STATUSES = ("pending", "preparing", "ready", "delivered")
 
 _order_counter = 1042
 _orders = {}
@@ -279,3 +280,29 @@ def checkout_cancel(order_id):
         view="error",
         error=result.get("error", "Order not found"),
     ), 404
+
+
+# --- Staff UI routes ---
+
+@order_bp.route('/staff', methods=['GET'])
+@login_required
+@require_role("staff", "admin")
+def staff_view():
+    return render_template(
+        "staff.html",
+        orders=get_all_orders(),
+        user=get_current_user(),
+        valid_statuses=VALID_STAFF_STATUSES,
+    )
+
+
+@order_bp.route('/staff/update', methods=['POST'])
+@login_required
+@require_role("staff", "admin")
+def staff_update():
+    order_id = request.form.get("order_id", "").strip()
+    new_status = request.form.get("status", "").strip()
+    result = update_order_status(order_id, new_status)
+    if not result["success"]:
+        flash(result["error"], "error")
+    return redirect(url_for("order.staff_view"))
