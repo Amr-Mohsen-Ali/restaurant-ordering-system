@@ -11,3 +11,6 @@ htmlcov/
 .DS_Store
 node_modules/
 *.log
+*.db
+*.sqlite
+*.sqlite3
