@@ -41,6 +41,28 @@ def add_menu_item(name, price, category):
         return {"success": True, "item_id": cursor.lastrowid}
 
 
+def update_menu_item(item_id, name, price, category, available):
+    """Update an existing menu item.
+
+    `available` is coerced to 0/1 via truthiness (so the caller can
+    pass a Python bool, 0/1, or even a form-string).
+
+    Returns {success: True} on success, or
+    {success: False, error: "Item not found"} when item_id is unknown
+    (UPDATE matched zero rows).
+    """
+    with database.get_db() as conn:
+        cursor = conn.execute(
+            "UPDATE menu_items "
+            "SET name = ?, price = ?, category = ?, available = ? "
+            "WHERE id = ?",
+            (name, price, category, 1 if available else 0, item_id),
+        )
+        if cursor.rowcount == 0:
+            return {"success": False, "error": "Item not found"}
+        return {"success": True}
+
+
 @menu_bp.route('/menu', methods=['GET'])
 def get_menu():
     return jsonify({'items': []})
