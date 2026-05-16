@@ -20,12 +20,13 @@ from flask import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
+from src.constants import ROLE_CUSTOMER
 from src.database import db, User
 
 auth_bp = Blueprint('auth', __name__)
 
 
-def register_user(username, password, role="customer"):
+def register_user(username, password, role=ROLE_CUSTOMER):
     """Register a new user account.
 
     Hashes the password via werkzeug.security and inserts a row into

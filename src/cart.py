@@ -1,16 +1,48 @@
-from flask import Blueprint, jsonify, request, render_template
+from uuid import uuid4
+
+from flask import Blueprint, jsonify, request, render_template, session
+
+from src.database import CartItem, db
 
 cart_bp = Blueprint('cart', __name__)
 
+# Kept only for old imports/tests; route data is persisted in CartItem rows.
 current_cart = {
     "items": [],
     "total": 0.00
 }
 
 
+def get_cart_session_key():
+    if "cart_session_key" not in session:
+        session["cart_session_key"] = uuid4().hex
+    return session["cart_session_key"]
+
+
+def _cart_query(session_key=None):
+    query = CartItem.query
+    if session_key is not None:
+        query = query.filter_by(session_key=session_key)
+    return query
+
+
+def serialize_cart(session_key=None):
+    items = [
+        item.to_dict()
+        for item in _cart_query(session_key).order_by(CartItem.id.asc()).all()
+    ]
+    total = round(sum(item["price"] * item["quantity"] for item in items), 2)
+    return {"items": items, "total": total}
+
+
 def get_cart():
     """Return current cart data."""
-    return current_cart
+    return serialize_cart(get_cart_session_key())
+
+
+def clear_cart(session_key=None):
+    _cart_query(session_key).delete()
+    db.session.commit()
 
 # cart.py
 # Linked requirements: REQ-C-01, REQ-C-02, REQ-C-03
@@ -117,63 +149,66 @@ def view_cart():
 @cart_bp.route('/cart/add', methods=['POST'])
 def add_to_cart_route():
     data = request.json
-    item_id = data.get('item_id')
+    item_id = str(data.get('item_id', '')).strip()
     item_name = data.get('item_name', item_id)
     price = float(data.get('price', 0))
     quantity = int(data.get('quantity', 1))
+    session_key = get_cart_session_key()
 
     if quantity < 1:
         return jsonify({"success": False, "error": "Quantity cannot be negative"})
 
-    found = False
-    for item in current_cart['items']:
-        if item['item_id'] == item_id:
-            item['quantity'] += quantity
-            found = True
-            break
-            
-    if not found:
-        current_cart['items'].append({"item_id": item_id, "name": item_name, "price": price, "quantity": quantity})
-        
-    current_cart['total'] += (price * quantity)
+    item = CartItem.query.filter_by(session_key=session_key, item_id=item_id).first()
+    if item:
+        item.quantity += quantity
+        item.price = price
+        item.name = item_name
+    else:
+        item = CartItem(
+            session_key=session_key,
+            item_id=item_id,
+            name=item_name,
+            price=price,
+            quantity=quantity,
+        )
+        db.session.add(item)
+
+    db.session.commit()
+    cart = serialize_cart(session_key)
 
     # Send the success message and new total back to cart.js
     return jsonify({
         "success": True,
-        "total": current_cart['total']
+        "total": cart["total"]
     })
 
 
 @cart_bp.route('/cart/update', methods=['POST'])
 def update_cart_item():
     data = request.json
-    item_id = data.get('item_id')
+    item_id = str(data.get('item_id', '')).strip()
     action = data.get('action') # 'increase', 'decrease', 'remove'
+    session_key = get_cart_session_key()
 
-    for item in current_cart['items']:
-        if item['item_id'] == item_id:
-            if action == 'increase':
-                item['quantity'] += 1
-                current_cart['total'] += item['price']
-            elif action == 'decrease':
-                if item['quantity'] > 1:
-                    item['quantity'] -= 1
-                    current_cart['total'] -= item['price']
-                else:
-                    current_cart['total'] -= (item['price'] * item['quantity'])
-                    current_cart['items'].remove(item)
-            elif action == 'remove':
-                current_cart['total'] -= (item['price'] * item['quantity'])
-                current_cart['items'].remove(item)
-            break
+    item = CartItem.query.filter_by(session_key=session_key, item_id=item_id).first()
+    if item:
+        if action == 'increase':
+            item.quantity += 1
+        elif action == 'decrease':
+            if item.quantity > 1:
+                item.quantity -= 1
+            else:
+                db.session.delete(item)
+        elif action == 'remove':
+            db.session.delete(item)
+        db.session.commit()
 
-    # Avoid floating point precision issues and negative totals
-    current_cart['total'] = round(max(0, current_cart['total']), 2)
+    cart = serialize_cart(session_key)
 
-    return jsonify({"success": True, "total": current_cart['total']})
+    return jsonify({"success": True, "total": cart["total"]})
 
 
 @cart_bp.route('/cart/data', methods=['GET'])
 def get_cart_data():
     """Return current cart data for checkout page."""
-    return jsonify(current_cart)
+    return jsonify(get_cart())

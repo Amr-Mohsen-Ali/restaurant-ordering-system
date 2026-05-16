@@ -5,9 +5,10 @@ This file contains the order tracking business logic and Flask blueprint routes.
 
 from flask import Blueprint, jsonify, request, render_template
 from src.database import db, Order
+from src.constants import ORDER_STATUSES, is_valid_order_status
 
 tracking_bp = Blueprint("tracking", __name__)
-VALID_STATUSES = ["Preparing", "Out for Delivery", "Delivered"]
+VALID_STATUSES = list(ORDER_STATUSES)
 
 
 def is_empty_order_id(order_id):
@@ -36,7 +37,7 @@ def update_order_status(order_id, new_status):
     order = Order.query.get(order_id.strip())
     if not order:
         raise ValueError("Invalid order ID")
-    if new_status not in VALID_STATUSES:
+    if not is_valid_order_status(new_status):
         raise ValueError("Invalid status")
     order.status = new_status
     db.session.commit()

@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container">
     <div class="cart-section">
-        <h2>Your Cart 🛒</h2>
+        <h2>Your Cart</h2>
 
         <div id="cart-message" class="cart-message" role="status" aria-live="polite" hidden></div>
 
@@ -14,7 +14,7 @@
         </div>
 
         <div class="cart-total">
-            <h3>Total: <span id="cartTotal">0.00</span></h3>
+            <h3>Total: EGP <span id="cartTotal">0.00</span></h3>
             <a href="/checkout" class="btn" id="checkoutBtn" style="display: none;">Proceed to Checkout</a>
         </div>
     </div>
@@ -35,24 +35,24 @@ document.addEventListener('DOMContentLoaded', async function() {
     const checkoutBtn = document.getElementById('checkoutBtn');
 
     if (cart.items && cart.items.length > 0) {
-        badge.innerText = cart.items.length;
+        badge.innerText = cart.items.reduce((sum, item) => sum + item.quantity, 0);
         totalEl.innerText = cart.total.toFixed(2);
         emptyMsg.style.display = 'none';
         checkoutBtn.style.display = 'inline-block';
 
-        cart.items.forEach((item, index) => {
+        cart.items.forEach((item) => {
             const div = document.createElement('div');
             div.className = 'cart-item';
             div.innerHTML = `
                 <div class="cart-item-info">
                     <h4>${item.name || item.item_id}</h4>
-                    <p>${item.price.toFixed(2)} x ${item.quantity}</p>
+                    <p>EGP ${item.price.toFixed(2)} x ${item.quantity}</p>
                 </div>
                 <div class="cart-item-actions">
-                    <button onclick="updateQuantity('${item.item_id}', 'decrease')">-</button>
+                    <button onclick="updateQuantity('${item.item_id}', 'decrease')" aria-label="Decrease quantity">-</button>
                     <span>${item.quantity}</span>
-                    <button onclick="updateQuantity('${item.item_id}', 'increase')">+</button>
-                    <button onclick="updateQuantity('${item.item_id}', 'remove')" style="color: red;">X</button>
+                    <button onclick="updateQuantity('${item.item_id}', 'increase')" aria-label="Increase quantity">+</button>
+                    <button onclick="updateQuantity('${item.item_id}', 'remove')" aria-label="Remove item" style="color: red;">X</button>
                 </div>
             `;
             itemsContainer.appendChild(div);

@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Restaurant Ordering{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     {% block extra_head %}{% endblock %}
 </head>
 <body>
-    <nav>
-        <a href="/" class="logo">EJUST</a>
-        <div class="nav-links">
+    <nav class="site-nav">
+        <a href="/" class="logo">EJUST Kitchen</a>
+        <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">Menu</button>
+        <div class="nav-links" id="siteNavLinks">
             <a href="/">Home</a>
             <a href="/menu">Menu</a>
             <a href="/cart" class="cart-icon">
@@ -19,11 +21,15 @@
             </a>
             <a href="/checkout">Checkout</a>
             <a href="/tracking">Track Order</a>
+            <a href="/reservations">Reservations</a>
             {% if current_user and current_user.role in ['staff', 'admin'] %}
-                <a href="/staff" style="color: #f38609;">Staff</a>
+                <a href="/staff" class="staff-link">Staff</a>
+            {% endif %}
+            {% if current_user and current_user.role == 'admin' %}
+                <a href="/admin/dashboard" class="staff-link">Admin</a>
             {% endif %}
             {% if current_user %}
-                <span style="color: #888;">| {{ current_user.username }}</span>
+                <span class="nav-user">{{ current_user.username }}</span>
                 <a href="/logout">Logout</a>
             {% else %}
                 <a href="/login">Login</a>
@@ -35,6 +41,18 @@
     <main>
         {% block content %}{% endblock %}
     </main>
+
+    <footer class="site-footer">
+        <div>
+            <strong>EJUST Kitchen</strong>
+            <p>Fresh orders, clear tracking, and smooth table reservations.</p>
+        </div>
+        <div class="footer-links">
+            <a href="/menu">Menu</a>
+            <a href="/reservations">Book a Table</a>
+            <a href="/tracking">Track Order</a>
+        </div>
+    </footer>
 
     {% block scripts %}{% endblock %}
     <script>
@@ -51,7 +69,17 @@
                 console.log('Cart badge update failed');
             }
         }
+        window.updateCartBadge = updateCartBadge;
         updateCartBadge();
+
+        const navToggle = document.querySelector('.nav-toggle');
+        const navLinks = document.getElementById('siteNavLinks');
+        if (navToggle && navLinks) {
+            navToggle.addEventListener('click', () => {
+                const isOpen = navLinks.classList.toggle('open');
+                navToggle.setAttribute('aria-expanded', String(isOpen));
+            });
+        }
     </script>
 </body>
 </html>

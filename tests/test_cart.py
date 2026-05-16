@@ -1,6 +1,7 @@
 import pytest
 from src import create_app
-from src.cart import Cart, current_cart
+from src.cart import Cart
+from src.database import CartItem, db
 
 
 @pytest.fixture
@@ -16,9 +17,10 @@ def client(app):
 
 
 @pytest.fixture(autouse=True)
-def reset_current_cart():
-    current_cart["items"].clear()
-    current_cart["total"] = 0.00
+def reset_cart_table(app):
+    with app.app_context():
+        CartItem.query.delete()
+        db.session.commit()
 
 
 def test_cart_get(client):
@@ -30,6 +32,56 @@ def test_cart_add_item(client):
     response = client.post('/cart/add', json={'item_id': '1', 'price': 75.0, 'quantity': 1})
     assert response.status_code == 200, "Should return 200 on successful add"
     assert response.get_json()["success"] is True
+
+
+def test_cart_add_item_persists_to_database(client, app):
+    client.post('/cart/add', json={
+        'item_id': '1',
+        'item_name': 'Pizza',
+        'price': 75.0,
+        'quantity': 2,
+    })
+
+    with app.app_context():
+        item = CartItem.query.filter_by(item_id='1').first()
+
+    assert item is not None
+    assert item.name == 'Pizza'
+    assert item.quantity == 2
+
+
+def test_cart_data_reads_database_items(client):
+    client.post('/cart/add', json={
+        'item_id': '1',
+        'item_name': 'Pizza',
+        'price': 75.0,
+        'quantity': 2,
+    })
+
+    response = client.get('/cart/data')
+    data = response.get_json()
+
+    assert data["items"][0]["item_id"] == "1"
+    assert data["items"][0]["quantity"] == 2
+    assert data["total"] == 150.0
+
+
+def test_checkout_clears_database_cart_after_order(client, app):
+    client.post('/cart/add', json={
+        'item_id': '1',
+        'item_name': 'Pizza',
+        'price': 75.0,
+        'quantity': 1,
+    })
+
+    response = client.post('/checkout', data={
+        'name': 'Gaber',
+        'address': '123 Main St',
+    })
+
+    assert response.status_code == 302
+    with app.app_context():
+        assert CartItem.query.count() == 0
 
 
 # tests/test_cart.py

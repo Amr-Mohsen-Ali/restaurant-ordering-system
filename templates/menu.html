@@ -24,7 +24,7 @@
         <div class="menu-item {% if not item.available %}unavailable{% endif %}">
             <img src="{{ item.image }}" alt="{{ item.name }}">
             <h3>{{ item.name }}</h3>
-            <p class="price">{{ "%.2f"|format(item.price) }}</p>
+            <p class="price">EGP {{ "%.2f"|format(item.price) }}</p>
             <p class="ingredients"><strong>Ingredients:</strong> {{ item.ingredients | join(", ") }}</p>
             {% if not item.available %}
             <span class="unavailable-badge">Not Available</span>

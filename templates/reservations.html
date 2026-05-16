@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Table Reservations{% endblock %}
+
+{% block content %}
+<section class="reservation-hero">
+  <div>
+    <span class="eyebrow">Book your table</span>
+    <h1>Reserve a seat before the rush.</h1>
+    <p>Pick a date, slot, party size, and an available table. The kitchen keeps reservations simple and predictable.</p>
+  </div>
+</section>
+
+<section class="reservation-shell">
+  <form method="POST" action="{{ url_for('reservations.reservations_submit') }}" class="reservation-form" id="reservationForm">
+    <h2>Reservation Details</h2>
+
+    {% if error %}
+      <div class="form-alert">{{ error }}</div>
+    {% endif %}
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="customer_name">Name</label>
+        <input id="customer_name" name="customer_name" value="{{ (form_data.customer_name if form_data else current_user.username) if current_user else (form_data.customer_name if form_data else '') }}" required>
+      </div>
+      <div class="form-group">
+        <label for="contact">Contact</label>
+        <input id="contact" name="contact" value="{{ form_data.contact if form_data else '' }}" placeholder="Phone or email" required>
+      </div>
+      <div class="form-group">
+        <label for="reservation_date">Date</label>
+        <input id="reservation_date" name="reservation_date" type="date" value="{{ form_data.reservation_date if form_data else '' }}" required>
+      </div>
+      <div class="form-group">
+        <label for="reservation_slot">Time Slot</label>
+        <select id="reservation_slot" name="reservation_slot" required>
+          {% for slot in time_slots %}
+            <option value="{{ slot }}" {% if form_data and form_data.reservation_slot == slot %}selected{% endif %}>{{ slot }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="party_size">Party Size</label>
+        <input id="party_size" name="party_size" type="number" min="1" max="12" value="{{ form_data.party_size if form_data else '2' }}" required>
+      </div>
+      <div class="form-group">
+        <label for="notes">Notes</label>
+        <input id="notes" name="notes" value="{{ form_data.notes if form_data else '' }}" placeholder="Optional">
+      </div>
+    </div>
+
+    <input type="hidden" id="table_number" name="table_number" value="{{ form_data.table_number if form_data else '' }}" required>
+
+    <div class="table-picker-header">
+      <div>
+        <h2>Choose a Table</h2>
+        <p id="availabilityMessage">Select your date, slot, and party size to refresh availability.</p>
+      </div>
+    </div>
+
+    <div class="floor-plan" id="floorPlan">
+      {% for table in tables %}
+        <button
+          type="button"
+          class="table-card"
+          data-table-number="{{ table.number }}"
+          data-capacity="{{ table.capacity }}"
+        >
+          <strong>{{ table.label }}</strong>
+          <span>{{ table.capacity }} guests</span>
+          <small>{{ table.zone }}</small>
+        </button>
+      {% endfor %}
+    </div>
+
+    <button type="submit" class="btn reservation-submit">Reserve Table</button>
+  </form>
+
+  <aside class="reservation-panel">
+    <h2>Your Reservations</h2>
+    {% if my_reservations %}
+      <div class="reservation-list">
+        {% for reservation in my_reservations %}
+          <a href="{{ url_for('reservations.reservation_detail', reservation_id=reservation.id) }}" class="reservation-list-item">
+            <strong>{{ reservation.reservation_date }} · {{ reservation.reservation_slot }}</strong>
+            <span>Table {{ reservation.table_number }} · {{ reservation.status }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% elif current_user %}
+      <div class="empty-state-card">You do not have reservations yet.</div>
+    {% else %}
+      <div class="empty-state-card">Log in to view your reservation history after booking.</div>
+    {% endif %}
+  </aside>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/reservations.js') }}"></script>
+{% endblock %}

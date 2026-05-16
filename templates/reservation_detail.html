@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}Reservation Confirmed{% endblock %}
+
+{% block content %}
+<section class="reservation-detail">
+  <div class="confirmation-card">
+    <span class="eyebrow">Reservation #{{ reservation.id }}</span>
+    <h1>Your table is requested.</h1>
+    <p>We saved your reservation as <strong>{{ reservation.status }}</strong>. Staff will manage the final seating flow from the dashboard.</p>
+
+    <div class="detail-grid">
+      <div>
+        <span>Date</span>
+        <strong>{{ reservation.reservation_date }}</strong>
+      </div>
+      <div>
+        <span>Time</span>
+        <strong>{{ reservation.reservation_slot }}</strong>
+      </div>
+      <div>
+        <span>Table</span>
+        <strong>{{ reservation.table_number }}</strong>
+      </div>
+      <div>
+        <span>Party</span>
+        <strong>{{ reservation.party_size }}</strong>
+      </div>
+    </div>
+
+    <a href="/reservations" class="btn">Book Another Table</a>
+  </div>
+</section>
+{% endblock %}

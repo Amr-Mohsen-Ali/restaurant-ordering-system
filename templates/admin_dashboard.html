@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-layout">
+  <aside class="dashboard-sidebar">
+    <a href="/admin/dashboard" class="dashboard-brand">Admin</a>
+    <a href="#overview">Overview</a>
+    <a href="#orders">Recent Orders</a>
+    <a href="#reservations">Reservations</a>
+    <a href="/staff">Staff Operations</a>
+  </aside>
+
+  <section class="dashboard-main">
+    <div class="dashboard-header">
+      <div>
+        <span class="eyebrow">Admin workspace · {{ user.username }}</span>
+        <h1>Restaurant Dashboard</h1>
+      </div>
+      <a href="/staff" class="dashboard-action">Open Operations</a>
+    </div>
+
+    <div id="overview" class="metric-grid">
+      <div class="metric-card">
+        <span>Total Orders</span>
+        <strong>{{ metrics.total_orders }}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Revenue</span>
+        <strong>EGP {{ "%.2f"|format(metrics.revenue) }}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Active Orders</span>
+        <strong>{{ metrics.active_orders }}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Delivered Orders</span>
+        <strong>{{ metrics.delivered_orders }}</strong>
+      </div>
+      <div class="metric-card">
+        <span>Reservations Today</span>
+        <strong>{{ metrics.reservations_today }}</strong>
+      </div>
+    </div>
+
+    <div class="dashboard-grid">
+      <div class="dashboard-card">
+        <div class="dashboard-card-header">
+          <h2>Most Ordered Items</h2>
+        </div>
+        {% if metrics.most_ordered_items %}
+          <div class="rank-list">
+            {% for name, count in metrics.most_ordered_items %}
+              <div class="rank-row">
+                <span>{{ name }}</span>
+                <strong>{{ count }}</strong>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state-card">No order analytics yet.</div>
+        {% endif %}
+      </div>
+
+      <div id="reservations" class="dashboard-card">
+        <div class="dashboard-card-header">
+          <h2>Upcoming Reservations</h2>
+        </div>
+        {% if reservations %}
+          <div class="compact-list">
+            {% for reservation in reservations %}
+              <div class="compact-row">
+                <div>
+                  <strong>{{ reservation.customer_name }}</strong>
+                  <span>{{ reservation.reservation_date }} · {{ reservation.reservation_slot }} · Table {{ reservation.table_number }}</span>
+                </div>
+                <span class="status-badge reservation-{{ reservation.status|lower }}">{{ reservation.status }}</span>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state-card">No upcoming reservations.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div id="orders" class="dashboard-card">
+      <div class="dashboard-card-header">
+        <h2>Recent Orders</h2>
+      </div>
+      {% if recent_orders %}
+        <div class="table-wrap">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Order</th>
+                <th>Customer</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for order in recent_orders %}
+                <tr>
+                  <td><strong>#{{ order.id }}</strong></td>
+                  <td>{{ order.customer_name or 'Guest' }}</td>
+                  <td class="money">EGP {{ "%.2f"|format(order.total) }}</td>
+                  <td><span class="status-badge status-{{ order.status|lower|replace(' ', '-') }}">{{ order.status }}</span></td>
+                  <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') if order.created_at else '-' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state-card">No recent orders yet.</div>
+      {% endif %}
+    </div>
+  </section>
+</div>
+{% endblock %}

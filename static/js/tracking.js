@@ -3,11 +3,8 @@ const form = document.querySelector("#trackingForm");
 const orderInput = document.querySelector("#orderId");
 const resultBox = document.querySelector("#result");
 const trackButton = document.querySelector("#trackButton");
-const advanceButton = document.querySelector("#advanceButton");
 const orderDetails = document.querySelector("#orderDetails");
 const statusSteps = document.querySelectorAll("[data-status-step]");
-
-let currentOrderId = "";
 
 
 function showMessage(message, type) {
@@ -47,8 +44,6 @@ function showOrderDetails(order) {
 
 
 function resetOrderDisplay() {
-  currentOrderId = "";
-  advanceButton.hidden = true;
   orderDetails.hidden = true;
   orderDetails.innerHTML = "";
   updateProgress("");
@@ -56,11 +51,9 @@ function resetOrderDisplay() {
 
 
 function showSuccessfulOrder(orderId, data) {
-  currentOrderId = orderId;
   showMessage(`Order ${orderId}: ${data.status}`, "success");
   showOrderDetails(data.order);
   updateProgress(data.status);
-  advanceButton.hidden = data.status === "Delivered";
 }
 
 
@@ -77,7 +70,6 @@ form.addEventListener("submit", async (event) => {
   }
 
   trackButton.disabled = true;
-  advanceButton.disabled = true;
   showMessage("Loading order status...", "");
 
   try {
@@ -96,35 +88,6 @@ form.addEventListener("submit", async (event) => {
     showMessage("Unable to connect to the server. Please try again.", "error");
   } finally {
     trackButton.disabled = false;
-    advanceButton.disabled = false;
-  }
-});
-
-
-advanceButton.addEventListener("click", async () => {
-  if (currentOrderId === "") {
-    return;
-  }
-
-  advanceButton.disabled = true;
-  showMessage("Updating order status...", "");
-
-  try {
-    const response = await fetch(`/track/${encodeURIComponent(currentOrderId)}/advance`, {
-      method: "POST",
-    });
-    const data = await response.json();
-
-    if (!response.ok || data.success === false) {
-      showMessage(data.error || "Unable to update order status.", "error");
-      return;
-    }
-
-    showSuccessfulOrder(currentOrderId, data);
-  } catch (error) {
-    showMessage("Unable to connect to the server. Please try again.", "error");
-  } finally {
-    advanceButton.disabled = false;
   }
 });
 

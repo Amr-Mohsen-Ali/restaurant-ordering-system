@@ -1,6 +1,6 @@
 import os
 from flask import Flask, render_template
-from src.database import db, seed_orders, seed_users
+from src.database import db, ensure_cart_columns, seed_orders, seed_users
 from src import auth
 
 
@@ -25,6 +25,7 @@ def create_app(test_config=None):
 
     with app.app_context():
         db.create_all()
+        ensure_cart_columns()
         if not app.config.get('TESTING'):
             seed_orders()
             seed_users()
@@ -37,11 +38,12 @@ def create_app(test_config=None):
     def home():
         return render_template('home.html')
 
-    from src import menu, cart, order, tracking
+    from src import menu, cart, order, tracking, reservations
     app.register_blueprint(auth.auth_bp)
     app.register_blueprint(menu.menu_bp)
     app.register_blueprint(cart.cart_bp)
     app.register_blueprint(order.order_bp)
     app.register_blueprint(tracking.tracking_bp)
+    app.register_blueprint(reservations.reservations_bp)
 
     return app

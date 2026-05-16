@@ -21,12 +21,12 @@
                 {% for item in order["items"] %}
                 <div class="order-summary-item">
                     <span>{{ item.name or item.item_id }} x {{ item.quantity }}</span>
-                    <span>{{ "%.2f"|format(item.price * item.quantity) }}</span>
+                    <span>EGP {{ "%.2f"|format(item.price * item.quantity) }}</span>
                 </div>
                 {% endfor %}
                 <div class="order-summary-item" style="border-top: 2px solid var(--dark); margin-top: 1rem; padding-top: 1rem;">
                     <strong>Total</strong>
-                    <strong style="color: var(--green);">{{ "%.2f"|format(order.total) }}</strong>
+                    <strong style="color: var(--green);">EGP {{ "%.2f"|format(order.total) }}</strong>
                 </div>
             </div>
 
@@ -65,12 +65,12 @@
                     {% for item in cart %}
                     <div class="order-summary-item">
                         <span>{{ item.name or item.item_id }} x {{ item.quantity }}</span>
-                        <span>{{ "%.2f"|format(item.price * item.quantity) }}</span>
+                        <span>EGP {{ "%.2f"|format(item.price * item.quantity) }}</span>
                     </div>
                     {% endfor %}
                     <div class="order-summary-item" style="border-top: 2px solid var(--dark); margin-top: 1rem; padding-top: 1rem;">
                         <strong>Total</strong>
-                        <strong style="color: var(--green);">{{ "%.2f"|format(cart_total) }}</strong>
+                        <strong style="color: var(--green);">EGP {{ "%.2f"|format(cart_total) }}</strong>
                     </div>
                 {% else %}
                     <p class="empty-cart">Your cart is empty</p>

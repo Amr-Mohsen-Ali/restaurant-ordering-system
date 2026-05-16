@@ -1,10 +1,21 @@
 import datetime
 import os
+from collections import Counter
 
 from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
+from src.constants import (
+    ORDER_STATUS_DELIVERED,
+    ORDER_STATUS_PREPARING,
+    ORDER_STATUSES,
+    RESERVATION_STATUSES,
+    ROLE_ADMIN,
+    ROLE_STAFF,
+    is_valid_order_status,
+)
 from src.database import db, Order
-from src.cart import current_cart
+from src.cart import clear_cart, get_cart
 from src import auth
+from src.reservations_service import count_reservations_today, get_upcoming_reservations, update_reservation_status
 
 order_bp = Blueprint('order', __name__)
 
@@ -12,7 +23,36 @@ CANCEL_WINDOW = datetime.timedelta(minutes=2)
 
 ORDER_COUNTER_FILE = os.path.join(os.path.dirname(__file__), '..', 'instance', 'order_counter.txt')
 
-VALID_STAFF_STATUSES = ("Preparing", "Out for Delivery", "Delivered")
+VALID_STAFF_STATUSES = ORDER_STATUSES
+
+
+def _iter_order_item_names(order_items):
+    for item in order_items or []:
+        if isinstance(item, dict):
+            yield item.get("name") or item.get("item_id") or "Item"
+        else:
+            yield str(item)
+
+
+def get_dashboard_metrics():
+    orders = Order.query.all()
+    status_counts = Counter(order.status for order in orders)
+    item_counts = Counter()
+    for order in orders:
+        item_counts.update(_iter_order_item_names(order.order_items))
+
+    active_orders = sum(
+        1 for order in orders
+        if order.status != ORDER_STATUS_DELIVERED
+    )
+    return {
+        "total_orders": len(orders),
+        "revenue": round(sum(order.total or 0 for order in orders), 2),
+        "active_orders": active_orders,
+        "delivered_orders": status_counts.get(ORDER_STATUS_DELIVERED, 0),
+        "reservations_today": count_reservations_today(),
+        "most_ordered_items": item_counts.most_common(5),
+    }
 
 
 def get_all_orders():
@@ -34,7 +74,7 @@ def get_all_orders():
 
 def update_order_status(order_id, new_status):
     """Update an order's status."""
-    if new_status not in VALID_STAFF_STATUSES:
+    if not is_valid_order_status(new_status):
         return {"success": False, "error": "Invalid status"}
     
     order = Order.query.get(order_id)
@@ -74,7 +114,7 @@ def place_order(cart_items, customer_info):
         id=order_id,
         order_items=cart_items,
         total=round(total, 2),
-        status='Preparing',
+        status=ORDER_STATUS_PREPARING,
         customer_name=customer_info['name'],
         customer_address=customer_info['address'],
         estimated_time=25
@@ -85,7 +125,7 @@ def place_order(cart_items, customer_info):
     return {
         "success": True,
         "order_id": order_id,
-        "status": "Preparing",
+        "status": ORDER_STATUS_PREPARING,
         "estimated_time": 25,
     }
 
@@ -102,7 +142,7 @@ def cancel_order(order_id):
     if not order:
         return {"success": False, "error": "Order not found"}
 
-    if order.status in ['Ready', 'Delivered']:
+    if order.status == ORDER_STATUS_DELIVERED:
         return {"success": False, "error": f"Cannot cancel {order.status.lower()} order"}
 
     age = datetime.datetime.utcnow() - order.created_at
@@ -149,32 +189,33 @@ def cancel_order_view(order_id):
 
 @order_bp.route('/checkout', methods=['GET'])
 def checkout_view():
-    cart = [] if request.args.get('empty') == '1' else current_cart["items"]
+    cart_data = get_cart()
+    cart = [] if request.args.get('empty') == '1' else cart_data["items"]
     return render_template(
         "checkout.html",
         view="cart",
         cart=cart,
-        cart_total=current_cart["total"],
+        cart_total=cart_data["total"],
     )
 
 
 @order_bp.route('/checkout', methods=['POST'])
 def checkout_submit():
-    cart = current_cart["items"]
+    cart_data = get_cart()
+    cart = cart_data["items"]
     customer = {
         "name": request.form.get("name", "").strip(),
         "address": request.form.get("address", "").strip(),
     }
     result = place_order(cart, customer)
     if result["success"]:
-        current_cart["items"] = []
-        current_cart["total"] = 0.00
+        clear_cart()
         return redirect(url_for("order.checkout_confirmation", order_id=result["order_id"]))
     return render_template(
         "checkout.html",
         view="cart",
         cart=cart,
-        cart_total=current_cart["total"],
+        cart_total=cart_data["total"],
         error=result["error"],
         form_name=customer["name"],
         form_address=customer["address"],
@@ -217,19 +258,22 @@ def checkout_cancel(order_id):
 
 @order_bp.route('/staff', methods=['GET'])
 @auth.login_required
-@auth.require_role("staff", "admin")
+@auth.require_role(ROLE_STAFF, ROLE_ADMIN)
 def staff_view():
     return render_template(
         "staff.html",
         orders=get_all_orders(),
+        reservations=get_upcoming_reservations(),
+        metrics=get_dashboard_metrics(),
         user=auth.get_current_user(),
         valid_statuses=VALID_STAFF_STATUSES,
+        reservation_statuses=RESERVATION_STATUSES,
     )
 
 
 @order_bp.route('/staff/update', methods=['POST'])
 @auth.login_required
-@auth.require_role("staff", "admin")
+@auth.require_role(ROLE_STAFF, ROLE_ADMIN)
 def staff_update():
     order_id = request.form.get("order_id", "").strip()
     new_status = request.form.get("status", "").strip()
@@ -237,3 +281,31 @@ def staff_update():
     if not result["success"]:
         flash(result["error"], "error")
     return redirect(url_for("order.staff_view"))
+
+
+@order_bp.route('/staff/reservations/update', methods=['POST'])
+@auth.login_required
+@auth.require_role(ROLE_STAFF, ROLE_ADMIN)
+def reservation_update():
+    reservation_id = request.form.get("reservation_id", "").strip()
+    new_status = request.form.get("status", "").strip()
+    try:
+        update_reservation_status(reservation_id, new_status)
+    except ValueError as error:
+        flash(str(error), "error")
+    return redirect(request.referrer or url_for("order.staff_view"))
+
+
+@order_bp.route('/admin/dashboard', methods=['GET'])
+@auth.login_required
+@auth.require_role(ROLE_ADMIN)
+def admin_dashboard():
+    recent_orders = Order.query.order_by(Order.created_at.desc()).limit(8).all()
+    reservations = get_upcoming_reservations(limit=8)
+    return render_template(
+        "admin_dashboard.html",
+        metrics=get_dashboard_metrics(),
+        recent_orders=recent_orders,
+        reservations=reservations,
+        user=auth.get_current_user(),
+    )
