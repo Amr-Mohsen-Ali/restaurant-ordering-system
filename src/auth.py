@@ -9,10 +9,21 @@ require_role gate views behind session presence and role membership.
 import sqlite3
 from functools import wraps
 
-from flask import abort, redirect, session
+from flask import (
+    Blueprint,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from src import database
+
+auth_bp = Blueprint('auth', __name__)
 
 
 def register_user(username, password, role="customer"):
@@ -105,3 +116,44 @@ def require_role(*allowed_roles):
             return view_func(*args, **kwargs)
         return wrapper
     return decorator
+
+
+# --- Routes ---
+
+@auth_bp.route('/login', methods=['GET'])
+def login_view():
+    return render_template("login.html")
+
+
+@auth_bp.route('/login', methods=['POST'])
+def login_submit():
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "")
+    result = login_user(username, password)
+    if result["success"]:
+        session["user"] = result["user"]
+        return redirect("/menu")
+    flash(result["error"], "error")
+    return render_template("login.html", username=username), 400
+
+
+@auth_bp.route('/register', methods=['GET'])
+def register_view():
+    return render_template("register.html")
+
+
+@auth_bp.route('/register', methods=['POST'])
+def register_submit():
+    username = request.form.get("username", "").strip()
+    password = request.form.get("password", "")
+    result = register_user(username, password)
+    if result["success"]:
+        return redirect(url_for("auth.login_view"))
+    flash(result["error"], "error")
+    return render_template("register.html", username=username), 400
+
+
+@auth_bp.route('/logout', methods=['GET'])
+def logout():
+    session.pop("user", None)
+    return redirect("/login")
