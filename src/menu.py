@@ -63,6 +63,29 @@ def update_menu_item(item_id, name, price, category, available):
         return {"success": True}
 
 
+def delete_menu_item(item_id):
+    """Hard-delete a menu item.
+
+    Returns {success: True} on success, or
+    {success: False, error: "Item not found"} when item_id is unknown
+    (DELETE matched zero rows).
+
+    NOTE: order_items rows may reference this menu_item_id. There is
+    no FK cascade, so those rows keep the now-orphaned id. Historical
+    order records remain intact via the embedded name/price snapshot
+    in order_items. If you ever need referential integrity, swap to
+    soft-delete (set available=0) instead.
+    """
+    with database.get_db() as conn:
+        cursor = conn.execute(
+            "DELETE FROM menu_items WHERE id = ?",
+            (item_id,),
+        )
+        if cursor.rowcount == 0:
+            return {"success": False, "error": "Item not found"}
+        return {"success": True}
+
+
 @menu_bp.route('/menu', methods=['GET'])
 def get_menu():
     return jsonify({'items': []})
