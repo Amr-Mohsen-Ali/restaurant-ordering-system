@@ -16,6 +16,9 @@
         {% if current_user and current_user.role in ['staff', 'admin'] %}
             <a href="/staff">Staff</a>
         {% endif %}
+        {% if current_user and current_user.role == 'admin' %}
+            <a href="/admin">Admin</a>
+        {% endif %}
         {% if current_user %}
             <span style="color:#888;">| {{ current_user.username }}</span>
             <a href="/logout">Logout</a>

@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel{% endblock %}
+
+{% block extra_head %}
+<style>
+  .admin-container {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+  .admin-container h1 { margin-top: 0; }
+  .admin-container h2 { margin-top: 2rem; }
+
+  /* Status summary cards */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  .summary-card {
+    background: #f5f5f5;
+    padding: 1rem;
+    border-radius: 6px;
+    text-align: center;
+  }
+  .summary-card .count {
+    font-size: 2rem;
+    font-weight: bold;
+    color: #2c7a2c;
+  }
+  .summary-card .label {
+    color: #555;
+    text-transform: capitalize;
+    margin-top: 0.3rem;
+    font-size: 0.95rem;
+  }
+  .summary-card.pending .count { color: #856404; }
+  .summary-card.preparing .count { color: #004085; }
+  .summary-card.ready .count { color: #155724; }
+  .summary-card.delivered .count { color: #383d41; }
+
+  /* Menu items table */
+  table.menu {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+    font-size: 0.92rem;
+  }
+  table.menu th, table.menu td {
+    text-align: left;
+    padding: 0.55rem 0.6rem;
+    border-bottom: 1px solid #e6e6e6;
+    vertical-align: middle;
+  }
+  table.menu th {
+    background: #f5f5f5;
+    font-weight: 600;
+  }
+
+  .inline-form {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .inline-form input[type="text"],
+  .inline-form input[type="number"] {
+    padding: 0.3rem 0.4rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+  }
+  .inline-form input[name="name"] { width: 150px; }
+  .inline-form input[name="price"] { width: 80px; }
+  .inline-form input[name="category"] { width: 110px; }
+  .inline-form label {
+    font-size: 0.85rem;
+    color: #555;
+  }
+  .inline-form button {
+    padding: 0.35rem 0.75rem;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+  }
+  .btn-update { background: #2c7a2c; color: #fff; }
+  .btn-delete { background: #b03a3a; color: #fff; }
+
+  /* Add new item section */
+  .add-section {
+    background: #f8f9fa;
+    padding: 1.2rem;
+    border-radius: 6px;
+    margin-top: 1rem;
+  }
+  .add-section h2 { margin-top: 0; }
+  .add-form {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .add-form input {
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.95rem;
+  }
+  .add-form input[name="name"] { width: 200px; }
+  .add-form input[name="price"] { width: 100px; }
+  .add-form input[name="category"] { width: 150px; }
+  .add-form button {
+    padding: 0.55rem 1.2rem;
+    background: #2c7a2c;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+
+  /* Alerts */
+  .alert {
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+  }
+  .alert-error {
+    background: #fde2e2;
+    border: 1px solid #b03a3a;
+    color: #7a1f1f;
+  }
+
+  .empty-menu {
+    color: #888;
+    font-style: italic;
+    text-align: center;
+    padding: 1.5rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-container">
+  <h1>Admin Panel</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <h2>Orders Summary</h2>
+  <div class="summary-grid">
+    {% for status, count in status_counts.items() %}
+      <div class="summary-card {{ status }}">
+        <div class="count">{{ count }}</div>
+        <div class="label">{{ status }}</div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <h2>Menu Items</h2>
+  {% if menu_items %}
+    <table class="menu">
+      <thead>
+        <tr>
+          <th style="width:60px;">ID</th>
+          <th>Edit</th>
+          <th style="width:90px;">Delete</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in menu_items %}
+          <tr>
+            <td>{{ item.id }}</td>
+            <td>
+              <form method="POST" action="{{ url_for('menu.admin_menu_update') }}" class="inline-form">
+                <input type="hidden" name="item_id" value="{{ item.id }}">
+                <input type="text" name="name" value="{{ item.name }}" required>
+                <input type="number" name="price" value="{{ '%.2f'|format(item.price) }}" step="0.01" min="0" required>
+                <input type="text" name="category" value="{{ item.category or '' }}" placeholder="Category">
+                <label>
+                  <input type="checkbox" name="available" {% if item.available %}checked{% endif %}>
+                  Available
+                </label>
+                <button type="submit" class="btn-update">Update</button>
+              </form>
+            </td>
+            <td>
+              <form method="POST" action="{{ url_for('menu.admin_menu_delete') }}" class="inline-form">
+                <input type="hidden" name="item_id" value="{{ item.id }}">
+                <button type="submit" class="btn-delete">Delete</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="empty-menu">No menu items yet. Add one below.</p>
+  {% endif %}
+
+  <div class="add-section">
+    <h2>Add New Item</h2>
+    <form method="POST" action="{{ url_for('menu.admin_menu_add') }}" class="add-form">
+      <input type="text" name="name" placeholder="Name" required>
+      <input type="number" name="price" placeholder="Price" step="0.01" min="0" required>
+      <input type="text" name="category" placeholder="Category (optional)">
+      <button type="submit">Add Item</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
