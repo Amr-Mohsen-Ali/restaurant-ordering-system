@@ -1,14 +1,15 @@
 """Authentication module.
 
-register_user persists new accounts to the users table with bcrypt-style
-password hashing via werkzeug.security. The decorators (login_required,
-require_role) and get_current_user are still stubs in this commit and
-will be replaced with real session-backed implementations later.
+register_user / login_user persist and verify accounts against the users
+table (werkzeug.security for password hashing). get_current_user reads
+the authenticated user from the Flask session; login_required and
+require_role gate views behind session presence and role membership.
 """
 
 import sqlite3
 from functools import wraps
 
+from flask import abort, redirect, session
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from src import database
@@ -74,36 +75,33 @@ def login_user(username, password):
 
 
 def get_current_user():
-    """Return the currently-logged-in user.
+    """Return the authenticated user dict from the session, or None.
 
-    STUB: always returns the same staff user. Replace with session-based
-    lookup when real auth is wired up.
+    The session is populated by the /login route handler after a
+    successful login_user call. The dict has keys: id, username, role
+    (no password_hash — it never enters the session).
     """
-    return {"id": 1, "username": "staff1", "role": "staff"}
+    return session.get("user")
 
 
 def login_required(view_func):
-    """Decorator that gates a view behind authentication.
-
-    STUB: currently allows every request through. Replace with a real
-    session/identity check when auth lands.
-    """
+    """Decorator that redirects to /login when the request is unauthenticated."""
     @wraps(view_func)
     def wrapper(*args, **kwargs):
+        if get_current_user() is None:
+            return redirect("/login")
         return view_func(*args, **kwargs)
     return wrapper
 
 
 def require_role(*allowed_roles):
-    """Decorator factory that gates a view behind a role check.
-
-    STUB: currently allows every request through, regardless of the
-    user's role. Kept so route definitions can declare role requirements
-    today and have them enforced automatically when real auth lands.
-    """
+    """Decorator factory that aborts with 403 unless the user has one of `allowed_roles`."""
     def decorator(view_func):
         @wraps(view_func)
         def wrapper(*args, **kwargs):
+            user = get_current_user()
+            if user is None or user.get("role") not in allowed_roles:
+                abort(403)
             return view_func(*args, **kwargs)
         return wrapper
     return decorator
