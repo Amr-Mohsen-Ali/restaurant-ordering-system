@@ -16,7 +16,7 @@ def test_tracking_page_loads(client, app_context):
     response = client.get("/tracking")
 
     assert response.status_code == 200
-    assert b"Order Tracking" in response.data
+    assert b"Track Your" in response.data
 
     order_response = client.post('/place-order', json={
         'items': [{'name': 'Burger', 'price': 9.99, 'quantity': 1}],

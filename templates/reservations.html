@@ -1,102 +1,242 @@
 {% extends "base.html" %}
 
-{% block title %}Table Reservations{% endblock %}
+{% block title %}Reserve a Table - EJUST Kitchen{% endblock %}
+
+{% block extra_head %}
+<style>
+.reservation-page{padding:calc(var(--navbar-height,84px) + 2.5rem) 0 5rem}
+.reservation-hero{text-align:center;margin-bottom:3rem}
+.reservation-hero .eyebrow{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.25);border-radius:50px;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--color-primary);margin-bottom:1rem}
+.reservation-layout{display:grid;grid-template-columns:1fr 340px;gap:2rem;align-items:start}
+.res-form-card{background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:24px;padding:2rem}
+.res-form-card h2{font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:1.5rem;color:rgba(255,255,255,.7)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.1rem;margin-bottom:1.5rem}
+.form-group label{display:block;font-size:.75rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--color-text-secondary);margin-bottom:.45rem}
+.form-group input,.form-group select{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:.8rem 1rem;color:#fff;font-size:.875rem;outline:none;transition:all .3s}
+.form-group input:focus,.form-group select:focus{border-color:var(--color-primary);background:rgba(255,255,255,.08);box-shadow:0 0 0 3px rgba(255,140,0,.12)}
+.form-group select option{background:#1a0a00}
+.form-alert{padding:.875rem 1.1rem;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:var(--radius-lg);color:#fca5a5;font-size:.875rem;margin-bottom:1.25rem}
+/* Floor Plan */
+.table-picker-header{margin-bottom:1rem}
+.table-picker-header h2{font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.7);margin-bottom:.4rem}
+#availabilityMessage{font-size:.8rem;color:rgba(255,255,255,.4)}
+.zone-label{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:rgba(255,140,0,.6);margin:1rem 0 .5rem;padding-left:.25rem}
+.floor-plan{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:.875rem;margin-bottom:1.5rem}
+.table-card{background:rgba(255,255,255,.04);border:2px solid var(--color-border);border-radius:16px;padding:1rem;cursor:pointer;transition:all .3s;text-align:center;position:relative;overflow:hidden}
+.table-card::before{content:'';position:absolute;inset:0;background:var(--gradient-primary);opacity:0;transition:opacity .3s}
+.table-card:hover:not(:disabled){border-color:rgba(255,140,0,.5);background:rgba(255,140,0,.06);transform:translateY(-3px)}
+.table-card.selected{border-color:var(--color-primary);background:rgba(255,140,0,.1);box-shadow:0 0 20px rgba(255,140,0,.2)}
+.table-card.unavailable{opacity:.35;cursor:not-allowed;border-style:dashed}
+.table-card .t-number{font-size:1.5rem;font-weight:800;font-family:var(--font-display);background:var(--gradient-text);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;position:relative;z-index:1}
+.table-card .t-label{font-size:.78rem;font-weight:600;color:rgba(255,255,255,.7);margin:.2rem 0;position:relative;z-index:1}
+.table-card .t-capacity{font-size:.72rem;color:rgba(255,255,255,.4);position:relative;z-index:1}
+.table-card .t-avail{position:absolute;top:.5rem;right:.5rem;width:8px;height:8px;border-radius:50%;background:#10b981}
+.table-card.unavailable .t-avail{background:#ef4444}
+.table-card.selected .t-avail{background:var(--color-primary);box-shadow:0 0 8px rgba(255,140,0,.6)}
+.btn-reserve{width:100%;padding:.9rem;background:var(--gradient-primary);color:#fff;border:none;border-radius:50px;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.btn-reserve:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,140,0,.35)}
+.btn-reserve:disabled{opacity:.4;cursor:not-allowed;transform:none}
+/* My Reservations Panel */
+.res-panel{background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:24px;padding:1.5rem;position:sticky;top:calc(var(--navbar-height,84px) + 1rem)}
+.res-panel h2{font-size:.95rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:1.25rem;color:rgba(255,255,255,.7)}
+.res-list-item{display:flex;flex-direction:column;gap:.25rem;padding:.875rem;background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:14px;text-decoration:none;transition:all .2s;margin-bottom:.625rem}
+.res-list-item:hover{background:rgba(255,140,0,.05);border-color:rgba(255,140,0,.2)}
+.res-list-item strong{font-size:.85rem;color:#fff}
+.res-list-item span{font-size:.75rem;color:var(--color-text-secondary)}
+.empty-res{text-align:center;padding:2rem 1rem;color:rgba(255,255,255,.3);font-size:.85rem}
+@media(max-width:900px){.reservation-layout{grid-template-columns:1fr}.res-panel{position:static}}
+@media(max-width:600px){.form-grid{grid-template-columns:1fr}.floor-plan{grid-template-columns:repeat(3,1fr)}}
+</style>
+{% endblock %}
 
 {% block content %}
-<section class="reservation-hero">
-  <div>
-    <span class="eyebrow">Book your table</span>
-    <h1>Reserve a seat before the rush.</h1>
-    <p>Pick a date, slot, party size, and an available table. The kitchen keeps reservations simple and predictable.</p>
-  </div>
-</section>
+<div class="reservation-page">
+    <div class="section-container">
+        <!-- Hero -->
+        <div class="reservation-hero">
+            <div class="eyebrow"><i data-lucide="calendar"></i> Reserve Your Seat</div>
+            <h1 class="section-title">Book a <span class="gradient-text">Table</span></h1>
+            <p class="section-subtitle">Pick a date, time slot, party size, and available table before you arrive.</p>
+        </div>
 
-<section class="reservation-shell">
-  <form method="POST" action="{{ url_for('reservations.reservations_submit') }}" class="reservation-form" id="reservationForm">
-    <h2>Reservation Details</h2>
+        <div class="reservation-layout">
+            <!-- Form -->
+            <div class="res-form-card">
+                <form method="POST" action="{{ url_for('reservations.reservations_submit') }}" id="reservationForm">
+                    <h2><i data-lucide="user" style="width:15px;height:15px;display:inline;vertical-align:middle;margin-right:.35rem"></i>Reservation Details</h2>
 
-    {% if error %}
-      <div class="form-alert">{{ error }}</div>
-    {% endif %}
+                    {% if error %}
+                        <div class="form-alert">{{ error }}</div>
+                    {% endif %}
 
-    <div class="form-grid">
-      <div class="form-group">
-        <label for="customer_name">Name</label>
-        <input id="customer_name" name="customer_name" value="{{ (form_data.customer_name if form_data else current_user.username) if current_user else (form_data.customer_name if form_data else '') }}" required>
-      </div>
-      <div class="form-group">
-        <label for="contact">Contact</label>
-        <input id="contact" name="contact" value="{{ form_data.contact if form_data else '' }}" placeholder="Phone or email" required>
-      </div>
-      <div class="form-group">
-        <label for="reservation_date">Date</label>
-        <input id="reservation_date" name="reservation_date" type="date" value="{{ form_data.reservation_date if form_data else '' }}" required>
-      </div>
-      <div class="form-group">
-        <label for="reservation_slot">Time Slot</label>
-        <select id="reservation_slot" name="reservation_slot" required>
-          {% for slot in time_slots %}
-            <option value="{{ slot }}" {% if form_data and form_data.reservation_slot == slot %}selected{% endif %}>{{ slot }}</option>
-          {% endfor %}
-        </select>
-      </div>
-      <div class="form-group">
-        <label for="party_size">Party Size</label>
-        <input id="party_size" name="party_size" type="number" min="1" max="12" value="{{ form_data.party_size if form_data else '2' }}" required>
-      </div>
-      <div class="form-group">
-        <label for="notes">Notes</label>
-        <input id="notes" name="notes" value="{{ form_data.notes if form_data else '' }}" placeholder="Optional">
-      </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="customer_name">Full Name</label>
+                            <input id="customer_name" name="customer_name"
+                                   value="{{ (form_data.customer_name if form_data else current_user.username) if current_user else (form_data.customer_name if form_data else '') }}"
+                                   placeholder="Your name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contact">Contact</label>
+                            <input id="contact" name="contact"
+                                   value="{{ form_data.contact if form_data else '' }}"
+                                   placeholder="Phone or email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reservation_date">Date</label>
+                            <input id="reservation_date" name="reservation_date" type="date"
+                                   value="{{ form_data.reservation_date if form_data else '' }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="reservation_slot">Time Slot</label>
+                            <select id="reservation_slot" name="reservation_slot" required>
+                                {% for slot in time_slots %}
+                                    <option value="{{ slot }}" {% if form_data and form_data.reservation_slot == slot %}selected{% endif %}>{{ slot }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="party_size">Party Size</label>
+                            <input id="party_size" name="party_size" type="number" min="1" max="12"
+                                   value="{{ form_data.party_size if form_data else '2' }}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="notes">Notes (optional)</label>
+                            <input id="notes" name="notes"
+                                   value="{{ form_data.notes if form_data else '' }}"
+                                   placeholder="Special requests...">
+                        </div>
+                    </div>
+
+                    <input type="hidden" id="table_number" name="table_number"
+                           value="{{ form_data.table_number if form_data else '' }}" required>
+
+                    <!-- Table Picker -->
+                    <div class="table-picker-header">
+                        <h2><i data-lucide="layout-grid" style="width:15px;height:15px;display:inline;vertical-align:middle;margin-right:.35rem"></i>Choose a Table</h2>
+                        <p id="availabilityMessage">Select your date, slot, and party size to check availability.</p>
+                    </div>
+
+                    <div class="floor-plan" id="floorPlan">
+                        {% for table in tables %}
+                        <button type="button" class="table-card"
+                                id="table-btn-{{ table.id }}"
+                                data-table-number="{{ table.number }}"
+                                data-capacity="{{ table.capacity }}"
+                                data-zone="{{ table.zone }}">
+                            <div class="t-avail"></div>
+                            <div class="t-number">{{ table.number }}</div>
+                            <div class="t-label">{{ table.label }}</div>
+                            <div class="t-capacity"><i data-lucide="users" style="width:12px;height:12px;display:inline;vertical-align:middle"></i> {{ table.capacity }} guests</div>
+                        </button>
+                        {% endfor %}
+                    </div>
+
+                    <button type="submit" class="btn-reserve" id="reserveBtn">
+                        <i data-lucide="calendar-check"></i>
+                        <span>Reserve Table</span>
+                    </button>
+                </form>
+            </div>
+
+            <!-- My Reservations Panel -->
+            <aside class="res-panel">
+                <h2><i data-lucide="bookmark" style="width:15px;height:15px;display:inline;vertical-align:middle;margin-right:.35rem"></i>My Reservations</h2>
+                {% if my_reservations %}
+                    {% for r in my_reservations %}
+                    <a href="{{ url_for('reservations.reservation_detail', reservation_id=r.id) }}" class="res-list-item">
+                        <strong>{{ r.reservation_date }} · {{ r.reservation_slot }}</strong>
+                        <span>Table {{ r.table_number }} · {{ r.party_size }} guests</span>
+                        <span class="status-badge reservation-{{ r.status|lower }}" style="margin-top:.25rem;width:fit-content">{{ r.status }}</span>
+                    </a>
+                    {% endfor %}
+                {% elif current_user %}
+                    <div class="empty-res">
+                        <i data-lucide="calendar-x" style="width:36px;height:36px;margin-bottom:.75rem;opacity:.25;display:block;margin-left:auto;margin-right:auto"></i>
+                        No reservations yet.
+                    </div>
+                {% else %}
+                    <div class="empty-res">
+                        <a href="/login" style="color:var(--color-primary);font-weight:600">Log in</a> to view your reservation history.
+                    </div>
+                {% endif %}
+            </aside>
+        </div>
     </div>
-
-    <input type="hidden" id="table_number" name="table_number" value="{{ form_data.table_number if form_data else '' }}" required>
-
-    <div class="table-picker-header">
-      <div>
-        <h2>Choose a Table</h2>
-        <p id="availabilityMessage">Select your date, slot, and party size to refresh availability.</p>
-      </div>
-    </div>
-
-    <div class="floor-plan" id="floorPlan">
-      {% for table in tables %}
-        <button
-          type="button"
-          class="table-card"
-          data-table-number="{{ table.number }}"
-          data-capacity="{{ table.capacity }}"
-        >
-          <strong>{{ table.label }}</strong>
-          <span>{{ table.capacity }} guests</span>
-          <small>{{ table.zone }}</small>
-        </button>
-      {% endfor %}
-    </div>
-
-    <button type="submit" class="btn reservation-submit">Reserve Table</button>
-  </form>
-
-  <aside class="reservation-panel">
-    <h2>Your Reservations</h2>
-    {% if my_reservations %}
-      <div class="reservation-list">
-        {% for reservation in my_reservations %}
-          <a href="{{ url_for('reservations.reservation_detail', reservation_id=reservation.id) }}" class="reservation-list-item">
-            <strong>{{ reservation.reservation_date }} · {{ reservation.reservation_slot }}</strong>
-            <span>Table {{ reservation.table_number }} · {{ reservation.status }}</span>
-          </a>
-        {% endfor %}
-      </div>
-    {% elif current_user %}
-      <div class="empty-state-card">You do not have reservations yet.</div>
-    {% else %}
-      <div class="empty-state-card">Log in to view your reservation history after booking.</div>
-    {% endif %}
-  </aside>
-</section>
+</div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/reservations.js') }}"></script>
+<script>
+lucide.createIcons();
+
+let selectedTable = null;
+const tableNumberInput = document.getElementById('table_number');
+const availMsg = document.getElementById('availabilityMessage');
+const reserveBtn = document.getElementById('reserveBtn');
+
+// Table card click → select
+document.querySelectorAll('.table-card').forEach(card => {
+    card.addEventListener('click', () => {
+        if (card.classList.contains('unavailable')) return;
+        document.querySelectorAll('.table-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedTable = card.dataset.tableNumber;
+        tableNumberInput.value = selectedTable;
+        availMsg.textContent = `Table ${selectedTable} selected (${card.querySelector('.t-label').textContent}, seats ${card.dataset.capacity})`;
+        availMsg.style.color = '#FF8C00';
+    });
+});
+
+// Check availability when date/slot/party_size change
+const dateInput = document.getElementById('reservation_date');
+const slotSelect = document.getElementById('reservation_slot');
+const partySizeInput = document.getElementById('party_size');
+
+async function checkAvailability() {
+    const date = dateInput.value;
+    const slot = slotSelect.value;
+    const partySize = partySizeInput.value;
+    if (!date || !slot || !partySize) return;
+
+    availMsg.textContent = 'Checking availability...';
+    availMsg.style.color = 'rgba(255,255,255,.4)';
+
+    try {
+        const resp = await fetch(`/api/reservations/availability?date=${date}&slot=${slot}&party_size=${partySize}`);
+        const data = await resp.json();
+        if (data.success) {
+            const available = new Set(data.tables.map(t => String(t.number)));
+            document.querySelectorAll('.table-card').forEach(card => {
+                const num = card.dataset.tableNumber;
+                if (available.has(num)) {
+                    card.classList.remove('unavailable');
+                    card.disabled = false;
+                } else {
+                    card.classList.add('unavailable');
+                    card.classList.remove('selected');
+                    card.disabled = true;
+                    if (selectedTable === num) {
+                        selectedTable = null;
+                        tableNumberInput.value = '';
+                    }
+                }
+            });
+            availMsg.textContent = `${data.tables.length} table${data.tables.length !== 1 ? 's' : ''} available for ${partySize} guests on ${date} at ${slot}`;
+            availMsg.style.color = '#10b981';
+        }
+    } catch(e) {
+        availMsg.textContent = 'Could not load availability.';
+    }
+}
+
+[dateInput, slotSelect, partySizeInput].forEach(el => el.addEventListener('change', checkAvailability));
+
+// Restore selected table if form_data
+const preselected = tableNumberInput.value;
+if (preselected) {
+    const btn = document.querySelector(`.table-card[data-table-number="${preselected}"]`);
+    if (btn) btn.classList.add('selected');
+}
+</script>
 {% endblock %}

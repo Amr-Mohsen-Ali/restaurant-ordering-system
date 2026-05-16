@@ -1,34 +1,83 @@
 {% extends "base.html" %}
 
-{% block title %}Reservation Confirmed{% endblock %}
+{% block title %}Reservation #{{ reservation.id }} - EJUST Kitchen{% endblock %}
+
+{% block extra_head %}
+<style>
+.res-detail-page{padding:calc(var(--navbar-height,84px) + 3rem) 0 5rem;min-height:100vh}
+.res-detail-card{max-width:540px;margin:0 auto;background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:28px;overflow:hidden}
+.res-detail-header{padding:2rem;background:rgba(255,255,255,.02);border-bottom:1px solid var(--color-border);display:flex;align-items:center;gap:1rem}
+.res-icon{width:56px;height:56px;background:var(--gradient-primary);border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.res-icon .lucide{width:28px;height:28px;stroke:white}
+.res-detail-body{padding:1.75rem 2rem}
+.res-detail-row{display:flex;justify-content:space-between;align-items:center;padding:.75rem 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.875rem}
+.res-detail-row:last-child{border-bottom:none}
+.res-detail-row .label{color:rgba(255,255,255,.45);font-weight:500}
+.res-detail-row .value{font-weight:700;color:#fff}
+.res-detail-footer{padding:1.25rem 2rem;border-top:1px solid var(--color-border);display:flex;gap:.75rem;flex-wrap:wrap}
+</style>
+{% endblock %}
 
 {% block content %}
-<section class="reservation-detail">
-  <div class="confirmation-card">
-    <span class="eyebrow">Reservation #{{ reservation.id }}</span>
-    <h1>Your table is requested.</h1>
-    <p>We saved your reservation as <strong>{{ reservation.status }}</strong>. Staff will manage the final seating flow from the dashboard.</p>
-
-    <div class="detail-grid">
-      <div>
-        <span>Date</span>
-        <strong>{{ reservation.reservation_date }}</strong>
-      </div>
-      <div>
-        <span>Time</span>
-        <strong>{{ reservation.reservation_slot }}</strong>
-      </div>
-      <div>
-        <span>Table</span>
-        <strong>{{ reservation.table_number }}</strong>
-      </div>
-      <div>
-        <span>Party</span>
-        <strong>{{ reservation.party_size }}</strong>
-      </div>
+<div class="res-detail-page">
+    <div class="section-container">
+        <div class="res-detail-card">
+            <div class="res-detail-header">
+                <div class="res-icon"><i data-lucide="calendar-check"></i></div>
+                <div>
+                    <h1 style="font-family:var(--font-display);font-size:1.5rem;font-weight:800;margin-bottom:.25rem">
+                        Reservation <span class="gradient-text">#{{ reservation.id }}</span>
+                    </h1>
+                    <span class="status-badge reservation-{{ reservation.status|lower }}">{{ reservation.status }}</span>
+                </div>
+            </div>
+            <div class="res-detail-body">
+                <div class="res-detail-row">
+                    <span class="label">Guest Name</span>
+                    <span class="value">{{ reservation.customer_name }}</span>
+                </div>
+                <div class="res-detail-row">
+                    <span class="label">Contact</span>
+                    <span class="value">{{ reservation.contact }}</span>
+                </div>
+                <div class="res-detail-row">
+                    <span class="label">Date</span>
+                    <span class="value">{{ reservation.reservation_date }}</span>
+                </div>
+                <div class="res-detail-row">
+                    <span class="label">Time Slot</span>
+                    <span class="value">{{ reservation.reservation_slot }}</span>
+                </div>
+                <div class="res-detail-row">
+                    <span class="label">Table</span>
+                    <span class="value">Table {{ reservation.table_number }}</span>
+                </div>
+                <div class="res-detail-row">
+                    <span class="label">Party Size</span>
+                    <span class="value">{{ reservation.party_size }} guests</span>
+                </div>
+                {% if reservation.notes %}
+                <div class="res-detail-row">
+                    <span class="label">Notes</span>
+                    <span class="value">{{ reservation.notes }}</span>
+                </div>
+                {% endif %}
+            </div>
+            <div class="res-detail-footer">
+                <a href="/reservations" class="btn btn-outline">
+                    <i data-lucide="arrow-left"></i>
+                    <span>Back to Reservations</span>
+                </a>
+                <a href="/menu" class="btn btn-primary">
+                    <i data-lucide="utensils"></i>
+                    <span>Browse Menu</span>
+                </a>
+            </div>
+        </div>
     </div>
+</div>
+{% endblock %}
 
-    <a href="/reservations" class="btn">Book Another Table</a>
-  </div>
-</section>
+{% block scripts %}
+<script>lucide.createIcons();</script>
 {% endblock %}

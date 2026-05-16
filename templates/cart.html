@@ -1,79 +1,160 @@
 {% extends "base.html" %}
 
-{% block title %}Cart{% endblock %}
+{% block title %}Your Cart - EJUST Kitchen{% endblock %}
+
+{% block extra_head %}
+<style>
+.cart-page{padding:calc(var(--navbar-height,84px) + 2rem) 0 5rem;min-height:100vh}
+.cart-layout{display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start}
+.cart-panel{background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:24px;overflow:hidden}
+.cart-panel-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--color-border);background:rgba(255,255,255,.02);display:flex;justify-content:space-between;align-items:center}
+.cart-panel-header h2{font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:0}
+.cart-list{padding:.5rem 0}
+.cart-row{display:flex;align-items:center;gap:1rem;padding:1rem 1.5rem;border-bottom:1px solid rgba(255,255,255,.05);transition:background .2s}
+.cart-row:hover{background:rgba(255,255,255,.02)}
+.cart-row:last-child{border-bottom:none}
+.cart-row-info{flex:1;min-width:0}
+.cart-row-name{font-weight:700;font-size:.9rem;color:#fff;margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cart-row-price{font-size:.8rem;color:rgba(255,255,255,.5)}
+.cart-row-controls{display:flex;align-items:center;gap:.5rem;flex-shrink:0}
+.qty-ctrl-btn{width:30px;height:30px;border-radius:50%;border:1px solid var(--color-border);background:rgba(255,255,255,.05);color:#fff;font-size:.95rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.qty-ctrl-btn:hover{background:var(--color-primary);border-color:var(--color-primary)}
+.qty-ctrl-val{min-width:28px;text-align:center;font-weight:700;font-size:.9rem}
+.remove-btn{width:30px;height:30px;border-radius:50%;border:1px solid rgba(239,68,68,.25);background:rgba(239,68,68,.06);color:#fca5a5;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+.remove-btn:hover{background:#ef4444;color:#fff;border-color:#ef4444}
+.remove-btn .lucide{width:14px;height:14px}
+.empty-cart-page{text-align:center;padding:4rem 2rem}
+.empty-cart-page .empty-icon{width:80px;height:80px;background:rgba(255,255,255,.04);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem}
+.empty-cart-page .lucide{width:36px;height:36px;stroke:rgba(255,255,255,.25)}
+.empty-cart-page h3{font-size:1.25rem;font-weight:700;margin-bottom:.5rem}
+.empty-cart-page p{color:rgba(255,255,255,.45);margin-bottom:1.5rem}
+.summary-panel{background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:24px;padding:1.5rem;position:sticky;top:calc(var(--navbar-height,84px) + 1rem)}
+.summary-panel h3{font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:1.25rem}
+.summary-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;font-size:.875rem;color:rgba(255,255,255,.7)}
+.summary-row.total{padding-top:.875rem;margin-top:.5rem;border-top:1px solid var(--color-border);font-size:1.1rem;font-weight:800;color:#fff}
+.summary-row.total span:last-child{color:var(--color-primary)}
+.checkout-link{display:flex;align-items:center;justify-content:center;gap:.5rem;width:100%;padding:.9rem;background:var(--gradient-primary);color:#fff;border-radius:50px;font-weight:700;font-size:.9rem;text-decoration:none;transition:all .3s;margin-top:1.25rem;border:none;cursor:pointer}
+.checkout-link:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,140,0,.35)}
+.checkout-link:disabled{opacity:.4;cursor:not-allowed;transform:none}
+@media(max-width:768px){.cart-layout{grid-template-columns:1fr}.summary-panel{position:static}}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="cart-section">
-        <h2>Your Cart</h2>
+<div class="cart-page">
+    <div class="section-container">
+        <header class="section-header">
+            <h1 class="section-title">Your <span class="gradient-text">Cart</span></h1>
+        </header>
 
-        <div id="cart-message" class="cart-message" role="status" aria-live="polite" hidden></div>
+        <div class="cart-layout">
+            <!-- Cart Items Panel -->
+            <div class="cart-panel">
+                <div class="cart-panel-header">
+                    <h2>Order Items</h2>
+                    <span id="itemCountLabel" style="font-size:.8rem;color:rgba(255,255,255,.45)">Loading...</span>
+                </div>
+                <div id="cartListContainer">
+                    <!-- Loaded by JS -->
+                    <div class="empty-cart-page">
+                        <div class="empty-icon"><i data-lucide="shopping-bag"></i></div>
+                        <h3>Your cart is empty</h3>
+                        <p>Add some delicious items from the menu</p>
+                        <a href="/menu" class="btn btn-primary">Browse Menu</a>
+                    </div>
+                </div>
+            </div>
 
-        <div class="cart-items" id="cartItemsContainer">
-            <p class="empty-cart" id="emptyCartMessage">Your cart is empty</p>
-        </div>
-
-        <div class="cart-total">
-            <h3>Total: EGP <span id="cartTotal">0.00</span></h3>
-            <a href="/checkout" class="btn" id="checkoutBtn" style="display: none;">Proceed to Checkout</a>
+            <!-- Summary Panel -->
+            <div class="summary-panel">
+                <h3>Order Summary</h3>
+                <div class="summary-row"><span>Subtotal</span><span id="summarySubtotal">EGP 0.00</span></div>
+                <div class="summary-row total"><span>Total</span><span id="summaryTotal">EGP 0.00</span></div>
+                <a href="/checkout" class="checkout-link" id="checkoutLink" style="pointer-events:none;opacity:.4">
+                    <i data-lucide="credit-card"></i>
+                    <span>Proceed to Checkout</span>
+                </a>
+                <a href="/menu" class="btn btn-outline" style="width:100%;margin-top:.75rem;justify-content:center">
+                    <i data-lucide="plus"></i>
+                    <span>Add More Items</span>
+                </a>
+            </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/cart.js') }}"></script>
 <script>
-document.addEventListener('DOMContentLoaded', async function() {
+lucide.createIcons();
+
+async function loadCart() {
     const resp = await fetch('/cart/data');
     const cart = await resp.json();
-
-    const badge = document.getElementById('cartBadge');
-    const totalEl = document.getElementById('cartTotal');
-    const emptyMsg = document.getElementById('emptyCartMessage');
-    const itemsContainer = document.getElementById('cartItemsContainer');
-    const checkoutBtn = document.getElementById('checkoutBtn');
-
-    if (cart.items && cart.items.length > 0) {
-        badge.innerText = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-        totalEl.innerText = cart.total.toFixed(2);
-        emptyMsg.style.display = 'none';
-        checkoutBtn.style.display = 'inline-block';
-
-        cart.items.forEach((item) => {
-            const div = document.createElement('div');
-            div.className = 'cart-item';
-            div.innerHTML = `
-                <div class="cart-item-info">
-                    <h4>${item.name || item.item_id}</h4>
-                    <p>EGP ${item.price.toFixed(2)} x ${item.quantity}</p>
-                </div>
-                <div class="cart-item-actions">
-                    <button onclick="updateQuantity('${item.item_id}', 'decrease')" aria-label="Decrease quantity">-</button>
-                    <span>${item.quantity}</span>
-                    <button onclick="updateQuantity('${item.item_id}', 'increase')" aria-label="Increase quantity">+</button>
-                    <button onclick="updateQuantity('${item.item_id}', 'remove')" aria-label="Remove item" style="color: red;">X</button>
-                </div>
-            `;
-            itemsContainer.appendChild(div);
-        });
-    }
-});
-
-async function updateQuantity(itemId, action) {
-    try {
-        const response = await fetch('/cart/update', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ item_id: itemId, action: action })
-        });
-        const data = await response.json();
-        if (data.success) {
-            location.reload();
-        }
-    } catch (error) {
-        console.error('Update failed:', error);
-    }
+    renderCart(cart);
 }
+
+function renderCart(cart) {
+    const container = document.getElementById('cartListContainer');
+    const countLabel = document.getElementById('itemCountLabel');
+    const subtotalEl = document.getElementById('summarySubtotal');
+    const totalEl = document.getElementById('summaryTotal');
+    const checkoutLink = document.getElementById('checkoutLink');
+
+    if (!cart.items || cart.items.length === 0) {
+        container.innerHTML = `<div class="empty-cart-page"><div class="empty-icon"><i data-lucide="shopping-bag"></i></div><h3>Your cart is empty</h3><p>Add some delicious items from the menu</p><a href="/menu" class="btn btn-primary">Browse Menu</a></div>`;
+        countLabel.textContent = '0 items';
+        subtotalEl.textContent = 'EGP 0.00';
+        totalEl.textContent = 'EGP 0.00';
+        checkoutLink.style.pointerEvents = 'none';
+        checkoutLink.style.opacity = '.4';
+        lucide.createIcons();
+        return;
+    }
+
+    const totalQty = cart.items.reduce((s, i) => s + i.quantity, 0);
+    countLabel.textContent = `${totalQty} item${totalQty !== 1 ? 's' : ''}`;
+    subtotalEl.textContent = `EGP ${cart.total.toFixed(2)}`;
+    totalEl.textContent = `EGP ${cart.total.toFixed(2)}`;
+    checkoutLink.style.pointerEvents = '';
+    checkoutLink.style.opacity = '';
+
+    const list = document.createElement('div');
+    list.className = 'cart-list';
+    cart.items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'cart-row';
+        row.innerHTML = `
+            <div class="cart-row-info">
+                <p class="cart-row-name">${item.name || item.item_id}</p>
+                <p class="cart-row-price">EGP ${item.price.toFixed(2)} × ${item.quantity} = EGP ${(item.price * item.quantity).toFixed(2)}</p>
+            </div>
+            <div class="cart-row-controls">
+                <button class="qty-ctrl-btn" onclick="cartAction('${item.item_id}','decrease')">−</button>
+                <span class="qty-ctrl-val">${item.quantity}</span>
+                <button class="qty-ctrl-btn" onclick="cartAction('${item.item_id}','increase')">+</button>
+                <button class="remove-btn" onclick="cartAction('${item.item_id}','remove')" aria-label="Remove">
+                    <i data-lucide="trash-2"></i>
+                </button>
+            </div>`;
+        list.appendChild(row);
+    });
+    container.innerHTML = '';
+    container.appendChild(list);
+    lucide.createIcons();
+}
+
+async function cartAction(itemId, action) {
+    await fetch('/cart/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ item_id: itemId, action })
+    });
+    await loadCart();
+    updateCartBadge();
+}
+window.cartAction = cartAction;
+
+loadCart();
 </script>
 {% endblock %}

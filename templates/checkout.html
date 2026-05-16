@@ -1,96 +1,177 @@
 {% extends "base.html" %}
 
-{% block title %}Checkout{% endblock %}
+{% block title %}Checkout - EJUST Kitchen{% endblock %}
+
+{% block extra_head %}
+<style>
+.checkout-page{padding:calc(var(--navbar-height,84px) + 2rem) 0 5rem;min-height:100vh}
+.checkout-layout{display:grid;grid-template-columns:1fr 360px;gap:2rem;align-items:start}
+.checkout-card{background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:24px;overflow:hidden}
+.checkout-card-header{padding:1.25rem 1.5rem;border-bottom:1px solid var(--color-border);background:rgba(255,255,255,.02)}
+.checkout-card-header h2{font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin:0}
+.checkout-card-body{padding:1.5rem}
+.form-field{margin-bottom:1.25rem}
+.form-field label{display:block;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--color-text-secondary);margin-bottom:.5rem}
+.form-field input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:.875rem 1rem;color:#fff;font-size:.9rem;outline:none;transition:all .3s}
+.form-field input:focus{border-color:var(--color-primary);background:rgba(255,255,255,.08);box-shadow:0 0 0 3px rgba(255,140,0,.12)}
+.form-alert{padding:.875rem 1.25rem;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);border-radius:var(--radius-lg);color:#fca5a5;font-size:.875rem;margin-bottom:1.25rem}
+.btn-submit{width:100%;padding:.9rem;background:var(--gradient-primary);color:#fff;border:none;border-radius:50px;font-weight:700;font-size:.9rem;cursor:pointer;transition:all .3s;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.btn-submit:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(255,140,0,.35)}
+.btn-submit:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.summary-panel{background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:24px;padding:1.5rem;position:sticky;top:calc(var(--navbar-height,84px) + 1rem)}
+.summary-panel h3{font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:1.25rem}
+.order-item-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:.85rem}
+.order-item-row:last-of-type{border-bottom:none}
+.order-item-row span:first-child{color:rgba(255,255,255,.75);flex:1}
+.order-item-row span:last-child{font-weight:700;color:#fff;margin-left:.5rem}
+.summary-divider{border:none;border-top:1px solid var(--color-border);margin:.75rem 0}
+.summary-total{display:flex;justify-content:space-between;align-items:center;font-size:1.1rem;font-weight:800}
+.summary-total span:last-child{color:var(--color-primary)}
+/* Confirmation State */
+.confirm-card{text-align:center;padding:3rem 2rem;background:rgba(255,255,255,.03);border:1px solid rgba(16,185,129,.2);border-radius:24px}
+.confirm-checkmark{width:72px;height:72px;background:linear-gradient(135deg,#10b981,#059669);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;box-shadow:0 0 30px rgba(16,185,129,.3)}
+.confirm-checkmark .lucide{width:36px;height:36px;stroke:white;stroke-width:3}
+.confirm-title{font-family:var(--font-display);font-size:2rem;font-weight:800;margin-bottom:.5rem}
+.confirm-sub{color:rgba(255,255,255,.55);margin-bottom:1.5rem}
+.confirm-id{display:inline-flex;align-items:center;gap:.5rem;padding:.5rem 1.25rem;background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.25);border-radius:50px;font-size:.9rem;font-weight:700;color:var(--color-primary);margin-bottom:1.5rem}
+.confirm-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.confirm-info-card{background:rgba(255,255,255,.04);border:1px solid var(--color-border);border-radius:16px;padding:1rem}
+.confirm-info-card .label{font-size:.75rem;color:rgba(255,255,255,.45);margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.5px}
+.confirm-info-card .value{font-size:1rem;font-weight:700}
+.confirm-actions{display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap}
+/* Cancelled State */
+.cancelled-card{text-align:center;padding:3rem 2rem;background:rgba(239,68,68,.04);border:1px solid rgba(239,68,68,.15);border-radius:24px}
+.cancel-icon{width:72px;height:72px;background:rgba(239,68,68,.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.5rem;border:2px solid rgba(239,68,68,.25)}
+.cancel-icon .lucide{width:36px;height:36px;stroke:#fca5a5}
+@media(max-width:768px){.checkout-layout{grid-template-columns:1fr}.summary-panel{position:static}.confirm-info-grid{grid-template-columns:1fr}}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="checkout-container">
+<div class="checkout-page">
+    <div class="section-container">
+
         {% if view == "confirmation" %}
-            <h1>Order Confirmed!</h1>
-            <div class="order-summary" style="background: #d5f5e3; text-align: center;">
-                <p style="font-size: 1.6rem; color: var(--green);">Your order has been placed successfully!</p>
+        <!-- ── ORDER CONFIRMED ── -->
+        <div class="confirm-card">
+            <div class="confirm-checkmark"><i data-lucide="check"></i></div>
+            <h1 class="confirm-title">Order <span class="gradient-text">Confirmed!</span></h1>
+            <p class="confirm-sub">Your order has been sent to the kitchen</p>
+            <div class="confirm-id"><i data-lucide="hash"></i> Order #{{ order.id }}</div>
+            <div class="confirm-info-grid">
+                <div class="confirm-info-card">
+                    <p class="label">Estimated Time</p>
+                    <p class="value">{{ order.estimated_time }} min</p>
+                </div>
+                <div class="confirm-info-card">
+                    <p class="label">Status</p>
+                    <p class="value">{{ order.status }}</p>
+                </div>
             </div>
-
-            <p class="meta-row" style="font-size: 1.6rem; text-align: center;"><strong>Order ID:</strong> {{ order.id }}</p>
-            <p style="text-align: center; margin: 1rem 0;"><a href="/tracking?order_id={{ order.id }}" class="btn">Track Your Order</a></p>
-            <p class="meta-row" style="text-align: center;"><strong>Estimated time:</strong> {{ order.estimated_time }} minutes</p>
-            <p class="meta-row" style="text-align: center;"><strong>Status:</strong> {{ order.status }}</p>
-
-            <h3 style="margin-top: 2rem;">Order Items</h3>
-            <div class="order-summary">
+            <h3 style="margin-bottom:1rem;text-align:left">Order Items</h3>
+            <div style="background:rgba(255,255,255,.02);border:1px solid var(--color-border);border-radius:16px;padding:1rem;margin-bottom:1.5rem;text-align:left">
                 {% for item in order["items"] %}
-                <div class="order-summary-item">
-                    <span>{{ item.name or item.item_id }} x {{ item.quantity }}</span>
+                <div class="order-item-row">
+                    <span>{{ item.name or item.item_id }} × {{ item.quantity }}</span>
                     <span>EGP {{ "%.2f"|format(item.price * item.quantity) }}</span>
                 </div>
                 {% endfor %}
-                <div class="order-summary-item" style="border-top: 2px solid var(--dark); margin-top: 1rem; padding-top: 1rem;">
-                    <strong>Total</strong>
-                    <strong style="color: var(--green);">EGP {{ "%.2f"|format(order.total) }}</strong>
+                <hr class="summary-divider">
+                <div class="summary-total"><span>Total</span><span>EGP {{ "%.2f"|format(order.total) }}</span></div>
+            </div>
+            {% if cancel_error %}
+            <div class="form-alert">{{ cancel_error }}</div>
+            {% endif %}
+            <div class="confirm-actions">
+                <a href="/tracking?order_id={{ order.id }}" class="btn btn-primary">
+                    <i data-lucide="map-pin"></i><span>Track Order</span>
+                </a>
+                <a href="/menu" class="btn btn-outline">
+                    <i data-lucide="plus"></i><span>Order More</span>
+                </a>
+                <form method="POST" action="{{ url_for('order.checkout_cancel', order_id=order.id) }}" style="display:inline">
+                    <button type="submit" class="btn btn-outline" style="border-color:rgba(239,68,68,.3);color:#fca5a5">
+                        Cancel Order
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        {% elif view == "cancelled" %}
+        <!-- ── ORDER CANCELLED ── -->
+        <div class="cancelled-card">
+            <div class="cancel-icon"><i data-lucide="x"></i></div>
+            <h1 style="font-family:var(--font-display);font-size:2rem;margin-bottom:.5rem">Order Cancelled</h1>
+            <p style="color:rgba(255,255,255,.55);margin-bottom:1.5rem">Order <strong style="color:#fca5a5">#{{ order_id }}</strong> has been cancelled.</p>
+            <a href="/menu" class="btn btn-primary"><i data-lucide="arrow-left"></i><span>Back to Menu</span></a>
+        </div>
+
+        {% elif view == "error" %}
+        <!-- ── ERROR ── -->
+        <div class="cancelled-card">
+            <div class="cancel-icon"><i data-lucide="alert-triangle"></i></div>
+            <h1 style="font-family:var(--font-display);font-size:2rem;margin-bottom:.5rem">Something Went Wrong</h1>
+            <p style="color:rgba(255,255,255,.55);margin-bottom:1.5rem">{{ error }}</p>
+            <a href="/checkout" class="btn btn-primary"><span>Try Again</span></a>
+        </div>
+
+        {% else %}
+        <!-- ── CHECKOUT FORM ── -->
+        <header class="section-header">
+            <h1 class="section-title"><span class="gradient-text">Checkout</span></h1>
+        </header>
+
+        <div class="checkout-layout">
+            <!-- Form -->
+            <div class="checkout-card">
+                <div class="checkout-card-header"><h2>Delivery Details</h2></div>
+                <div class="checkout-card-body">
+                    {% if error %}
+                    <div class="form-alert">{{ error }}</div>
+                    {% endif %}
+                    <form method="POST" action="{{ url_for('order.checkout_submit') }}">
+                        <div class="form-field">
+                            <label for="name">Your Name</label>
+                            <input type="text" id="name" name="name" value="{{ form_name or '' }}" placeholder="Enter your name" required>
+                        </div>
+                        <div class="form-field">
+                            <label for="address">Delivery Address / Table Number</label>
+                            <input type="text" id="address" name="address" value="{{ form_address or '' }}" placeholder="e.g. Table 5 or Room 201" required>
+                        </div>
+                        <button type="submit" class="btn-submit" {% if not cart or cart|length == 0 %}disabled{% endif %}>
+                            <i data-lucide="send"></i>
+                            <span>Place Order</span>
+                        </button>
+                    </form>
                 </div>
             </div>
 
-            <form method="POST" action="{{ url_for('order.checkout_cancel', order_id=order.id) }}" style="text-align: center;">
-                <button type="submit" class="btn" style="background: #e74c3c;">Cancel Order</button>
-            </form>
-
-            <p style="text-align: center; margin-top: 2rem;"><a href="/menu" class="btn">Order More</a></p>
-
-        {% elif view == "cancelled" %}
-            <h1>Order Cancelled</h1>
-            <div class="order-summary" style="background: #fadbd8; text-align: center;">
-                <p style="font-size: 1.6rem;">Order <strong>{{ order_id }}</strong> has been cancelled.</p>
-            </div>
-            <p style="text-align: center; margin-top: 2rem;"><a href="/menu" class="btn">Back to Menu</a></p>
-
-        {% elif view == "error" %}
-            <h1>Something Went Wrong</h1>
-            <div class="order-summary" style="background: #fadbd8; text-align: center;">
-                <p style="font-size: 1.6rem; color: #e74c3c;">{{ error }}</p>
-            </div>
-            <p style="text-align: center; margin-top: 2rem;"><a href="/checkout" class="btn">Try Again</a></p>
-
-        {% else %}
-            <h1>Checkout</h1>
-
-            {% if error %}
-            <div class="order-summary" style="background: #fadbd8;">
-                <p style="color: #e74c3c;">{{ error }}</p>
-            </div>
-            {% endif %}
-
-            <div class="order-summary">
-                <h3>Your Cart</h3>
+            <!-- Summary -->
+            <div class="summary-panel">
+                <h3>Your Order</h3>
                 {% if cart and cart|length > 0 %}
                     {% for item in cart %}
-                    <div class="order-summary-item">
-                        <span>{{ item.name or item.item_id }} x {{ item.quantity }}</span>
+                    <div class="order-item-row">
+                        <span>{{ item.name or item.item_id }} × {{ item.quantity }}</span>
                         <span>EGP {{ "%.2f"|format(item.price * item.quantity) }}</span>
                     </div>
                     {% endfor %}
-                    <div class="order-summary-item" style="border-top: 2px solid var(--dark); margin-top: 1rem; padding-top: 1rem;">
-                        <strong>Total</strong>
-                        <strong style="color: var(--green);">EGP {{ "%.2f"|format(cart_total) }}</strong>
-                    </div>
+                    <hr class="summary-divider">
+                    <div class="summary-total"><span>Total</span><span>EGP {{ "%.2f"|format(cart_total) }}</span></div>
                 {% else %}
-                    <p class="empty-cart">Your cart is empty</p>
+                    <div style="text-align:center;padding:2rem 0;color:rgba(255,255,255,.35)">Cart is empty</div>
                 {% endif %}
+                <a href="/cart" class="btn btn-outline" style="width:100%;margin-top:1rem;justify-content:center">
+                    <i data-lucide="edit"></i><span>Edit Cart</span>
+                </a>
             </div>
-
-            <form method="POST" action="{{ url_for('order.checkout_submit') }}" class="checkout-form">
-                <div class="form-group">
-                    <label for="name">Your Name</label>
-                    <input type="text" id="name" name="name" value="{{ form_name or '' }}" required>
-                </div>
-                <div class="form-group">
-                    <label for="address">Delivery Address</label>
-                    <input type="text" id="address" name="address" value="{{ form_address or '' }}" required>
-                </div>
-                <button type="submit" class="btn" {% if not cart or cart|length == 0 %}disabled{% endif %}>
-                    Place Order
-                </button>
-            </form>
+        </div>
         {% endif %}
+
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>lucide.createIcons();</script>
 {% endblock %}

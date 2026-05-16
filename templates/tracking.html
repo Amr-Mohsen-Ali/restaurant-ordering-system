@@ -1,43 +1,195 @@
 {% extends "base.html" %}
 
-{% block title %}Order Tracking{% endblock %}
+{% block title %}Track Your Order - EJUST Kitchen{% endblock %}
+
+{% block extra_head %}
+<style>
+.tracking-page{padding:calc(var(--navbar-height,84px) + 3rem) 0 5rem;min-height:100vh}
+.tracking-panel{max-width:640px;margin:0 auto}
+.tracking-form-card{background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:24px;padding:2rem;margin-bottom:1.5rem}
+.tracking-form-card h2{font-size:1rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:1.25rem;color:rgba(255,255,255,.7)}
+.track-input-row{display:flex;gap:.75rem}
+.track-input{flex:1;background:rgba(255,255,255,.05);border:1px solid var(--color-border);border-radius:var(--radius-lg);padding:.875rem 1rem;color:#fff;font-size:.9rem;outline:none;transition:all .3s}
+.track-input:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(255,140,0,.12)}
+.btn-track{display:flex;align-items:center;gap:.5rem;padding:.875rem 1.5rem;background:var(--gradient-primary);color:#fff;border:none;border-radius:var(--radius-lg);font-weight:700;font-size:.875rem;cursor:pointer;white-space:nowrap;transition:all .3s}
+.btn-track:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(255,140,0,.35)}
+#result-box{margin-top:1rem;font-size:.875rem;color:rgba(255,255,255,.45);min-height:1.2rem}
+.result-error{color:#fca5a5!important}
+.status-card{background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:24px;padding:2rem;display:none}
+.status-card.visible{display:block}
+.live-indicator{display:inline-flex;align-items:center;gap:.5rem;padding:.35rem .9rem;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.2);border-radius:50px;font-size:.75rem;font-weight:700;color:#6ee7b7;margin-bottom:1.5rem}
+.live-dot{width:8px;height:8px;background:#10b981;border-radius:50%;animation:blink 1.5s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.order-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem}
+.info-block{background:rgba(255,255,255,.04);border:1px solid var(--color-border);border-radius:16px;padding:1rem}
+.info-block .label{font-size:.72rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.8px;margin-bottom:.35rem}
+.info-block .value{font-size:1rem;font-weight:700}
+.status-stepper{display:flex;flex-direction:column;gap:0}
+.step{display:flex;align-items:flex-start;gap:1rem;padding:.875rem 0;position:relative}
+.step:not(:last-child)::after{content:'';position:absolute;left:16px;top:40px;width:2px;height:calc(100% - 16px);background:rgba(255,255,255,.08);transform:translateX(-50%)}
+.step.done::after{background:var(--gradient-primary)}
+.step-icon{width:32px;height:32px;border-radius:50%;border:2px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .4s}
+.step-icon .lucide{width:16px;height:16px;stroke:rgba(255,255,255,.3);transition:stroke .4s}
+.step.done .step-icon{border-color:var(--color-primary);background:rgba(255,140,0,.15)}
+.step.done .step-icon .lucide{stroke:var(--color-primary)}
+.step.active .step-icon{border-color:var(--color-primary);background:var(--gradient-primary);box-shadow:0 0 16px rgba(255,140,0,.4)}
+.step.active .step-icon .lucide{stroke:#fff}
+.step-content{flex:1}
+.step-label{font-weight:700;font-size:.9rem;color:rgba(255,255,255,.4);transition:color .4s}
+.step.done .step-label,.step.active .step-label{color:#fff}
+.step.active .step-label{color:var(--color-primary)}
+.step-sub{font-size:.78rem;color:rgba(255,255,255,.3);margin-top:2px}
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="tracking-page">
-    <div class="tracking-panel">
-        <h1>Order Tracking</h1>
-        <p>Enter your order ID to see the latest delivery status.</p>
+    <div class="section-container">
+        <div class="tracking-panel">
+            <header class="section-header" style="text-align:left;align-items:flex-start">
+                <h1 class="section-title">Track Your <span class="gradient-text">Order</span></h1>
+                <p class="section-subtitle">Enter your order ID to see the live delivery status</p>
+            </header>
 
-        <form id="trackingForm" class="tracking-form">
-            <label for="orderId">Order ID</label>
-            <div class="input-row">
-                <input id="orderId" name="orderId" type="text" autocomplete="off" placeholder="Example: 1000">
-                <button id="trackButton" type="submit" class="btn">Track</button>
+            <!-- Search Form -->
+            <div class="tracking-form-card">
+                <h2><i data-lucide="search" style="display:inline;vertical-align:middle;margin-right:.4rem"></i> Order Lookup</h2>
+                <form id="trackingForm">
+                    <div class="track-input-row">
+                        <input id="orderId" class="track-input" type="text" autocomplete="off" placeholder="Enter order ID, e.g. 1001">
+                        <button type="submit" class="btn-track" id="trackButton">
+                            <i data-lucide="search"></i>
+                            <span>Track</span>
+                        </button>
+                    </div>
+                </form>
+                <div id="result-box" role="status" aria-live="polite"></div>
             </div>
-        </form>
 
-        <div id="result" role="status" aria-live="polite">Waiting for an order ID.</div>
+            <!-- Status Card -->
+            <div class="status-card" id="statusCard">
+                <div class="live-indicator">
+                    <div class="live-dot"></div>
+                    <span>Live Tracking</span>
+                </div>
 
-        <div class="status-progress" aria-label="Order progress" id="statusProgress" style="display: none;">
-            <div class="status-step" data-status-step="Preparing">
-                <span class="status-dot"></span>
-                <span>Preparing</span>
-            </div>
-            <div class="status-step" data-status-step="Out for Delivery">
-                <span class="status-dot"></span>
-                <span>Out for Delivery</span>
-            </div>
-            <div class="status-step" data-status-step="Delivered">
-                <span class="status-dot"></span>
-                <span>Delivered</span>
+                <div class="order-info-grid">
+                    <div class="info-block">
+                        <p class="label">Order ID</p>
+                        <p class="value" id="displayOrderId">—</p>
+                    </div>
+                    <div class="info-block">
+                        <p class="label">Status</p>
+                        <p class="value" id="displayStatus">—</p>
+                    </div>
+                    <div class="info-block">
+                        <p class="label">Est. Time</p>
+                        <p class="value" id="displayTime">—</p>
+                    </div>
+                    <div class="info-block">
+                        <p class="label">Total</p>
+                        <p class="value" id="displayTotal">—</p>
+                    </div>
+                </div>
+
+                <!-- Stepper -->
+                <div class="status-stepper" id="statusStepper">
+                    <div class="step" id="step-preparing">
+                        <div class="step-icon"><i data-lucide="chef-hat"></i></div>
+                        <div class="step-content">
+                            <p class="step-label">Preparing</p>
+                            <p class="step-sub">Kitchen is cooking your order</p>
+                        </div>
+                    </div>
+                    <div class="step" id="step-delivery">
+                        <div class="step-icon"><i data-lucide="bike"></i></div>
+                        <div class="step-content">
+                            <p class="step-label">Out for Delivery</p>
+                            <p class="step-sub">On the way to you</p>
+                        </div>
+                    </div>
+                    <div class="step" id="step-delivered">
+                        <div class="step-icon"><i data-lucide="check-circle"></i></div>
+                        <div class="step-content">
+                            <p class="step-label">Delivered</p>
+                            <p class="step-sub">Enjoy your meal!</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-
-        <div id="orderDetails" class="order-details" hidden></div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/tracking.js') }}"></script>
+<script>
+lucide.createIcons();
+
+const statusMap = {
+    'Preparing': { index: 0, step: 'step-preparing' },
+    'Out for Delivery': { index: 1, step: 'step-delivery' },
+    'Delivered': { index: 2, step: 'step-delivered' }
+};
+const steps = ['step-preparing', 'step-delivery', 'step-delivered'];
+
+let pollInterval = null;
+
+function updateStepper(status) {
+    const current = statusMap[status];
+    if (!current) return;
+    steps.forEach((id, i) => {
+        const el = document.getElementById(id);
+        el.classList.remove('active', 'done');
+        if (i < current.index) el.classList.add('done');
+        else if (i === current.index) el.classList.add('active');
+    });
+}
+
+async function trackOrder(orderId) {
+    const resultBox = document.getElementById('result-box');
+    resultBox.className = '';
+    resultBox.textContent = 'Looking up order...';
+    try {
+        const resp = await fetch(`/track/${encodeURIComponent(orderId)}`);
+        const data = await resp.json();
+        if (data.success) {
+            resultBox.textContent = '';
+            const card = document.getElementById('statusCard');
+            card.classList.add('visible');
+            document.getElementById('displayOrderId').textContent = `#${data.order.id}`;
+            document.getElementById('displayStatus').textContent = data.order.status;
+            document.getElementById('displayTime').textContent = `${data.order.estimated_time} min`;
+            document.getElementById('displayTotal').textContent = `EGP ${(data.order.total || 0).toFixed(2)}`;
+            updateStepper(data.order.status);
+            lucide.createIcons();
+        } else {
+            resultBox.className = 'result-error';
+            resultBox.textContent = data.error || 'Order not found.';
+            document.getElementById('statusCard').classList.remove('visible');
+        }
+    } catch(e) {
+        resultBox.className = 'result-error';
+        resultBox.textContent = 'Could not reach the server. Please try again.';
+    }
+}
+
+document.getElementById('trackingForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('orderId').value.trim();
+    if (!id) return;
+    if (pollInterval) clearInterval(pollInterval);
+    await trackOrder(id);
+    pollInterval = setInterval(() => trackOrder(id), 8000);
+});
+
+// Auto-track if order_id in URL
+const params = new URLSearchParams(window.location.search);
+const autoId = params.get('order_id');
+if (autoId) {
+    document.getElementById('orderId').value = autoId;
+    trackOrder(autoId);
+    pollInterval = setInterval(() => trackOrder(autoId), 8000);
+}
+</script>
 {% endblock %}

@@ -1,61 +1,198 @@
 {% extends "base.html" %}
 
-{% block title %}Menu{% endblock %}
+{% block title %}Menu - EJUST Kitchen{% endblock %}
+
+{% block extra_head %}
+<style>
+.menu-page{padding:calc(var(--navbar-height,84px) + 2rem) 0 4rem}
+.search-container{margin-bottom:1.5rem}
+.search-box{position:relative;max-width:520px;margin:0 auto}
+.search-icon{position:absolute;left:1.1rem;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:rgba(255,255,255,.4);pointer-events:none}
+.search-input{width:100%;background:rgba(255,255,255,.05);border:1px solid var(--color-border);border-radius:50px;padding:.875rem 3rem .875rem 3rem;color:#fff;font-size:.95rem;outline:none;transition:all .3s}
+.search-input::placeholder{color:rgba(255,255,255,.3)}
+.search-input:focus{border-color:var(--color-primary);background:rgba(255,255,255,.08);box-shadow:0 0 0 3px rgba(255,140,0,.12)}
+.search-clear{position:absolute;right:1rem;top:50%;transform:translateY(-50%);background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:1.1rem;line-height:1}
+.category-tabs{display:flex;gap:.5rem;overflow-x:auto;scrollbar-width:none;padding-bottom:.5rem;margin-bottom:2rem}
+.category-tabs::-webkit-scrollbar{display:none}
+.category-tab{display:inline-flex;align-items:center;gap:.5rem;padding:.6rem 1.25rem;background:rgba(255,255,255,.04);border:1px solid var(--color-border);border-radius:50px;color:rgba(255,255,255,.6);font-size:.85rem;font-weight:600;cursor:pointer;white-space:nowrap;transition:all .25s;flex-shrink:0}
+.category-tab:hover{background:rgba(255,140,0,.08);border-color:rgba(255,140,0,.3);color:#fff}
+.category-tab.active{background:var(--gradient-primary);border-color:transparent;color:#fff;box-shadow:0 4px 15px rgba(255,140,0,.3)}
+.category-tab .tab-icon .lucide{width:16px;height:16px}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.5rem}
+.menu-card{background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:20px;overflow:hidden;transition:all .3s ease;cursor:pointer;position:relative}
+.menu-card:hover{background:rgba(255,255,255,.06);border-color:rgba(255,140,0,.3);transform:translateY(-6px);box-shadow:0 20px 40px rgba(0,0,0,.35)}
+.menu-card.unavailable{opacity:.55}
+.card-img{position:relative;height:180px;overflow:hidden}
+.card-img img{width:100%;height:100%;object-fit:cover;transition:transform .5s ease}
+.menu-card:hover .card-img img{transform:scale(1.08)}
+.unavailable-ribbon{position:absolute;top:.75rem;right:.75rem;background:rgba(239,68,68,.85);color:#fff;font-size:.7rem;font-weight:700;padding:.25rem .65rem;border-radius:50px;text-transform:uppercase;letter-spacing:.5px}
+.card-body{padding:1.25rem}
+.card-category{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--color-primary);margin-bottom:.4rem}
+.card-name{font-size:1rem;font-weight:700;color:#fff;margin-bottom:.4rem;line-height:1.3}
+.card-ingredients{font-size:.78rem;color:rgba(255,255,255,.45);margin-bottom:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-footer{display:flex;justify-content:space-between;align-items:center;gap:.75rem}
+.card-price{font-size:1.1rem;font-weight:800;color:var(--color-primary)}
+.card-price span{font-size:.75rem;font-weight:500;color:rgba(255,255,255,.4);margin-right:1px}
+.btn-add-item{display:flex;align-items:center;gap:.4rem;padding:.55rem 1rem;background:var(--gradient-primary);border-radius:50px;color:#fff;font-size:.8rem;font-weight:700;border:none;cursor:pointer;transition:all .3s}
+.btn-add-item:hover{transform:scale(1.05);box-shadow:0 4px 15px rgba(255,140,0,.4)}
+.btn-add-item:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.no-results{text-align:center;padding:4rem 2rem;color:rgba(255,255,255,.4)}
+.no-results-icon .lucide{width:48px;height:48px;margin-bottom:1rem;opacity:.3}
+.no-results-title{font-size:1.1rem;font-weight:700;margin-bottom:.4rem}
+.cart-message-bar{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);background:rgba(16,185,129,.9);color:#fff;padding:.75rem 1.5rem;border-radius:50px;font-weight:600;font-size:.875rem;z-index:1000;opacity:0;transition:opacity .3s;pointer-events:none}
+.cart-message-bar.show{opacity:1}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="heading">
-        <span>Our Menu</span>
-        <h3>Popular Dishes</h3>
-    </div>
+<div class="menu-page">
+    <div class="section-container">
+        <header class="section-header">
+            <h1 class="section-title">Our <span class="gradient-text">Menu</span></h1>
+            <p class="section-subtitle">Fresh, quality ingredients in every dish</p>
+        </header>
 
-    <div id="cart-message" class="cart-message" role="status" aria-live="polite" hidden></div>
+        <!-- Cart Message -->
+        <div id="cartMessageBar" class="cart-message-bar" role="status" aria-live="polite"></div>
 
-    <div class="menu-filters">
-        <button class="filter-btn active" data-category="">All</button>
-        {% for category in categories %}
-        <button class="filter-btn" data-category="{{ category }}">{{ category }}</button>
-        {% endfor %}
-        <button id="clear-filter" class="filter-btn">Clear</button>
-    </div>
-
-    <div id="menu-items" class="menu-grid">
-        {% for item in items %}
-        <div class="menu-item {% if not item.available %}unavailable{% endif %}">
-            <img src="{{ item.image }}" alt="{{ item.name }}">
-            <h3>{{ item.name }}</h3>
-            <p class="price">EGP {{ "%.2f"|format(item.price) }}</p>
-            <p class="ingredients"><strong>Ingredients:</strong> {{ item.ingredients | join(", ") }}</p>
-            {% if not item.available %}
-            <span class="unavailable-badge">Not Available</span>
-            {% endif %}
-            <div class="menu-cart-actions">
-                <label for="quantity-{{ item.id }}">Qty</label>
-                <input
-                    id="quantity-{{ item.id }}"
-                    class="cart-quantity"
-                    type="number"
-                    min="1"
-                    max="20"
-                    value="1"
-                    {% if not item.available %}disabled{% endif %}
-                >
-                <button
-                    class="add-to-cart-btn"
-                    data-item-id="{{ item.id }}"
-                    data-item-name="{{ item.name }}"
-                    data-price="{{ item.price }}"
-                    {% if not item.available %}disabled{% endif %}
-                >
-                    Add to Cart
-                </button>
+        <!-- Search -->
+        <div class="search-container">
+            <div class="search-box">
+                <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+                </svg>
+                <input type="search" id="menuSearch" class="search-input" placeholder="Search dishes..." aria-label="Search menu">
+                <button id="clearSearch" class="search-clear hidden" aria-label="Clear search">&times;</button>
             </div>
         </div>
-        {% endfor %}
+
+        <!-- Category Tabs -->
+        <div class="category-tabs" role="tablist" aria-label="Menu categories">
+            <button class="category-tab active" data-category="" role="tab" aria-selected="true">
+                <span class="tab-icon"><i data-lucide="layout-grid"></i></span>
+                <span class="tab-text">All</span>
+            </button>
+            {% for category in categories %}
+            <button class="category-tab" data-category="{{ category }}" role="tab" aria-selected="false">
+                <span class="tab-icon">
+                    {% if category == 'Main' %}<i data-lucide="utensils-crossed"></i>
+                    {% elif category == 'Side' %}<i data-lucide="cookie"></i>
+                    {% elif category == 'Dessert' %}<i data-lucide="cake-slice"></i>
+                    {% elif category == 'Drink' %}<i data-lucide="cup-soda"></i>
+                    {% else %}<i data-lucide="tag"></i>{% endif %}
+                </span>
+                <span class="tab-text">{{ category }}</span>
+            </button>
+            {% endfor %}
+        </div>
+
+        <!-- Menu Grid -->
+        <div id="menuGrid" class="menu-grid" role="list">
+            {% for item in items %}
+            <div class="menu-card {% if not item.available %}unavailable{% endif %}"
+                 data-category="{{ item.category }}"
+                 data-name="{{ item.name|lower }}"
+                 data-item-id="{{ item.id }}"
+                 data-item-name="{{ item.name }}"
+                 data-price="{{ item.price }}"
+                 data-available="{{ 'true' if item.available else 'false' }}"
+                 role="listitem">
+                <div class="card-img">
+                    <img src="{{ item.image }}" alt="{{ item.name }}" loading="lazy">
+                    {% if not item.available %}
+                    <span class="unavailable-ribbon">Unavailable</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <p class="card-category">{{ item.category }}</p>
+                    <h3 class="card-name">{{ item.name }}</h3>
+                    <p class="card-ingredients">{{ item.ingredients | join(", ") }}</p>
+                    <div class="card-footer">
+                        <p class="card-price"><span>EGP</span>{{ "%.2f"|format(item.price) }}</p>
+                        <button class="btn-add-item add-to-cart-btn"
+                                data-item-id="{{ item.id }}"
+                                data-item-name="{{ item.name }}"
+                                data-price="{{ item.price }}"
+                                {% if not item.available %}disabled{% endif %}
+                                aria-label="Add {{ item.name }} to cart">
+                            <i data-lucide="plus"></i>
+                            <span>Add</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- No Results -->
+        <div id="noResults" class="no-results hidden">
+            <div class="no-results-icon"><i data-lucide="search"></i></div>
+            <p class="no-results-title">No dishes found</p>
+            <p>Try a different search term or category</p>
+        </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+<script>
+lucide.createIcons();
+const allCards = Array.from(document.querySelectorAll('.menu-card'));
+const searchInput = document.getElementById('menuSearch');
+const clearBtn = document.getElementById('clearSearch');
+const noResults = document.getElementById('noResults');
+let activeCategory = '';
+
+function filterMenu() {
+    const q = searchInput.value.toLowerCase().trim();
+    clearBtn.classList.toggle('hidden', !q);
+    let visible = 0;
+    allCards.forEach(card => {
+        const matchCat = !activeCategory || card.dataset.category === activeCategory;
+        const matchSearch = !q || card.dataset.name.includes(q);
+        const show = matchCat && matchSearch;
+        card.style.display = show ? '' : 'none';
+        if (show) visible++;
+    });
+    noResults.classList.toggle('hidden', visible > 0);
+}
+
+document.querySelectorAll('.category-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        document.querySelectorAll('.category-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected','false'); });
+        tab.classList.add('active');
+        tab.setAttribute('aria-selected','true');
+        activeCategory = tab.dataset.category;
+        filterMenu();
+    });
+});
+
+searchInput.addEventListener('input', filterMenu);
+clearBtn.addEventListener('click', () => { searchInput.value = ''; filterMenu(); searchInput.focus(); });
+
+// Add to cart
+document.querySelectorAll('.add-to-cart-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        if (btn.disabled) return;
+        const { itemId, itemName, price } = btn.dataset;
+        btn.disabled = true;
+        try {
+            const resp = await fetch('/cart/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ item_id: itemId, item_name: itemName, price: parseFloat(price), quantity: 1 })
+            });
+            const data = await resp.json();
+            if (data.success) {
+                showToast(`${itemName} added to cart!`);
+                updateCartBadge();
+            }
+        } catch(e) {
+            showToast('Failed to add item', 'error');
+        }
+        setTimeout(() => { btn.disabled = false; }, 800);
+    });
+});
+</script>
 {% endblock %}

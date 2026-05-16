@@ -2,84 +2,268 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Restaurant Ordering{% endblock %}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="EJUST Kitchen - Fresh orders, clear tracking, and smooth table reservations.">
+    <meta name="theme-color" content="#0d0500">
+    <title>{% block title %}EJUST Kitchen{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
     {% block extra_head %}{% endblock %}
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Base extras */
+        .nav-user-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.35rem .75rem;background:rgba(255,140,0,.08);border:1px solid rgba(255,140,0,.2);border-radius:50px;font-size:.8rem;font-weight:600;color:var(--color-primary)}
+        .nav-user-badge .lucide{width:14px;height:14px}
+        .navbar-menu{display:flex;align-items:center;gap:1.5rem}
+        .btn-mobile-menu{display:none;width:40px;height:40px;align-items:center;justify-content:center;border-radius:var(--radius-md);background:rgba(255,255,255,.05);border:1px solid var(--color-border)}
+        .btn-mobile-menu svg{width:22px;height:22px;stroke:white}
+        .mobile-nav{display:none;flex-direction:column;background:rgba(13,5,0,.97);border-bottom:1px solid var(--color-border);padding:.75rem 1.5rem}
+        .mobile-nav.open{display:flex}
+        .mobile-nav a{padding:.7rem 0;border-bottom:1px solid rgba(255,255,255,.05);color:rgba(255,255,255,.8);font-size:.9rem;text-decoration:none}
+        .cart-item-row{display:flex;justify-content:space-between;align-items:center;padding:.875rem 0;border-bottom:1px solid rgba(255,255,255,.06);gap:.75rem}
+        .cart-item-info{flex:1;min-width:0}
+        .cart-item-name{font-size:.875rem;font-weight:600;color:#fff;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .cart-item-price{font-size:.78rem;color:var(--color-text-secondary)}
+        .cart-item-controls{display:flex;align-items:center;gap:.4rem;flex-shrink:0}
+        .qty-btn{width:28px;height:28px;border-radius:50%;border:1px solid var(--color-border);background:rgba(255,255,255,.05);color:#fff;font-size:.9rem;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .2s}
+        .qty-btn:hover{background:var(--color-primary);border-color:var(--color-primary)}
+        .qty-remove:hover{background:#ef4444;border-color:#ef4444}
+        .qty-value{min-width:22px;text-align:center;font-size:.85rem;font-weight:700}
+        .toast{position:relative;background:rgba(30,20,10,.95);border:1px solid rgba(255,140,0,.3);color:#fff;padding:.75rem 1.25rem;border-radius:var(--radius-lg);font-size:.875rem;opacity:0;transform:translateX(100%);transition:all .3s ease;margin-bottom:.5rem}
+        .toast.show{opacity:1;transform:translateX(0)}
+        .toast-error{border-color:rgba(239,68,68,.4);background:rgba(30,5,5,.95)}
+        @media(max-width:768px){.navbar-menu{display:none}.btn-mobile-menu{display:flex}}
+    </style>
 </head>
 <body>
-    <nav class="site-nav">
-        <a href="/" class="logo">EJUST Kitchen</a>
-        <button class="nav-toggle" type="button" aria-label="Toggle navigation" aria-expanded="false">Menu</button>
-        <div class="nav-links" id="siteNavLinks">
-            <a href="/">Home</a>
-            <a href="/menu">Menu</a>
-            <a href="/cart" class="cart-icon">
-                Cart
-                <span class="cart-count" id="cartBadge">0</span>
-            </a>
-            <a href="/checkout">Checkout</a>
-            <a href="/tracking">Track Order</a>
-            <a href="/reservations">Reservations</a>
+
+<nav class="navbar" id="navbar" role="navigation" aria-label="Main navigation">
+    <div class="navbar-container">
+        <a href="/" class="navbar-brand">
+            <div class="brand-logo">
+                <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EJUST Kitchen Logo">
+            </div>
+            <div class="brand-text">
+                <span class="brand-name">EJUST Kitchen</span>
+            </div>
+        </a>
+
+        <div class="navbar-menu" id="navbarMenu">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/menu" class="nav-link">Menu</a>
+            <a href="/tracking" class="nav-link">Track Order</a>
+            <a href="/reservations" class="nav-link">Reservations</a>
             {% if current_user and current_user.role in ['staff', 'admin'] %}
-                <a href="/staff" class="staff-link">Staff</a>
+                <a href="/staff" class="nav-link">Staff</a>
             {% endif %}
             {% if current_user and current_user.role == 'admin' %}
-                <a href="/admin/dashboard" class="staff-link">Admin</a>
+                <a href="/admin/dashboard" class="nav-link">Admin</a>
+                <a href="/kitchen" class="nav-link">Kitchen</a>
             {% endif %}
+        </div>
+
+        <div class="navbar-actions">
             {% if current_user %}
-                <span class="nav-user">{{ current_user.username }}</span>
-                <a href="/logout">Logout</a>
+                <span class="nav-user-badge"><i data-lucide="user"></i><span>{{ current_user.username }}</span></span>
+                <a href="/logout" class="btn btn-outline btn-sm">Logout</a>
             {% else %}
-                <a href="/login">Login</a>
-                <a href="/register">Register</a>
+                <a href="/login" class="btn btn-outline btn-sm">Login</a>
+                <a href="/register" class="btn btn-primary btn-sm">Register</a>
             {% endif %}
+            <button id="cartToggleBtn" class="btn btn-outline btn-navbar-action btn-cart" aria-label="View cart">
+                <span class="btn-icon">
+                    <svg class="cart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                </span>
+                <span class="btn-text">Cart</span>
+                <span id="cartBadge" class="cart-count hidden">0</span>
+            </button>
+            <button class="btn-mobile-menu" id="mobileMenuBtn" aria-label="Toggle menu">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+            </button>
         </div>
-    </nav>
+    </div>
+    <div class="mobile-nav" id="mobileNav">
+        <a href="/">Home</a>
+        <a href="/menu">Menu</a>
+        <a href="/tracking">Track Order</a>
+        <a href="/reservations">Reservations</a>
+        {% if current_user and current_user.role in ['staff', 'admin'] %}<a href="/staff">Staff</a>{% endif %}
+        {% if current_user and current_user.role == 'admin' %}<a href="/admin/dashboard">Admin</a><a href="/kitchen">Kitchen</a>{% endif %}
+    </div>
+</nav>
 
-    <main>
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="site-footer">
-        <div>
-            <strong>EJUST Kitchen</strong>
-            <p>Fresh orders, clear tracking, and smooth table reservations.</p>
+<!-- Cart Sidebar -->
+<div id="cartOverlay" class="overlay hidden" aria-hidden="true"></div>
+<aside id="cartSidebar" class="cart-sidebar" role="dialog" aria-labelledby="cartTitle" aria-modal="true">
+    <div class="cart-container">
+        <header class="cart-header">
+            <h2 id="cartTitle" class="cart-title">Your Cart</h2>
+            <button id="closeCart" class="btn-close" aria-label="Close cart">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+        </header>
+        <div class="cart-content">
+            <div id="cartItems" class="cart-items"></div>
+            <div id="emptyCart" class="empty-cart">
+                <div class="empty-cart-icon"><i data-lucide="shopping-bag"></i></div>
+                <p class="empty-cart-title">Your cart is empty</p>
+                <p class="empty-cart-subtitle">Add some delicious items!</p>
+            </div>
         </div>
-        <div class="footer-links">
-            <a href="/menu">Menu</a>
-            <a href="/reservations">Book a Table</a>
-            <a href="/tracking">Track Order</a>
+        <div id="cartSummary" class="cart-summary hidden">
+            <div class="summary-row"><span>Subtotal</span><span id="cartSubtotal">EGP 0.00</span></div>
+            <div class="summary-row total"><span>Total</span><span id="cartTotalSidebar" class="gradient-text">EGP 0.00</span></div>
+            <a href="/cart" class="btn btn-primary btn-place-order">
+                <span>View Full Cart</span><i data-lucide="arrow-right"></i>
+            </a>
         </div>
-    </footer>
+    </div>
+</aside>
 
-    {% block scripts %}{% endblock %}
-    <script>
-        async function updateCartBadge() {
-            try {
-                const response = await fetch('/cart/data');
-                const cart = await response.json();
-                const badge = document.getElementById('cartBadge');
-                if (cart.items) {
-                    const totalItems = cart.items.reduce((sum, item) => sum + item.quantity, 0);
-                    badge.textContent = totalItems;
-                }
-            } catch (e) {
-                console.log('Cart badge update failed');
-            }
-        }
-        window.updateCartBadge = updateCartBadge;
-        updateCartBadge();
+<main id="mainContent" class="main-content visible">
+    {% block content %}{% endblock %}
+</main>
 
-        const navToggle = document.querySelector('.nav-toggle');
-        const navLinks = document.getElementById('siteNavLinks');
-        if (navToggle && navLinks) {
-            navToggle.addEventListener('click', () => {
-                const isOpen = navLinks.classList.toggle('open');
-                navToggle.setAttribute('aria-expanded', String(isOpen));
+<footer class="footer" role="contentinfo">
+    <div class="footer-container">
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="footer-logo">
+                    <div class="brand-logo"><img src="{{ url_for('static', filename='images/logo.png') }}" alt="EJUST Kitchen"></div>
+                    <div class="brand-text"><span class="brand-name">EJUST Kitchen</span></div>
+                </div>
+                <p class="footer-description">Fresh orders, clear tracking, and smooth table reservations.</p>
+                <div class="social-links">
+                    <a href="#" class="social-link" aria-label="Facebook">
+                        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>
+                    </a>
+                    <a href="#" class="social-link" aria-label="Instagram">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="18" cy="6" r="1"/></svg>
+                    </a>
+                </div>
+            </div>
+            <div class="footer-column">
+                <h4 class="footer-heading">Quick Links</h4>
+                <ul class="footer-links">
+                    <li><a href="/menu">Menu</a></li>
+                    <li><a href="/cart">Cart</a></li>
+                    <li><a href="/tracking">Track Order</a></li>
+                    <li><a href="/reservations">Book a Table</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4 class="footer-heading">Hours</h4>
+                <ul class="footer-links">
+                    <li><span class="day">Sun – Thu</span><span class="time">10AM – 10PM</span></li>
+                    <li><span class="day">Fri – Sat</span><span class="time">11AM – 11PM</span></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4 class="footer-heading">Contact</h4>
+                <ul class="footer-links">
+                    <li><span class="footer-icon"><i data-lucide="map-pin"></i></span><a href="#">EJUST Campus, Alexandria</a></li>
+                    <li><span class="footer-icon"><i data-lucide="mail"></i></span><a href="mailto:kitchen@ejust.edu.eg">kitchen@ejust.edu.eg</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom"><p>&copy; 2026 EJUST Kitchen. All rights reserved.</p></div>
+    </div>
+</footer>
+
+<div id="toastContainer" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+<button id="backToTop" class="back-to-top hidden" aria-label="Back to top">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+</button>
+
+{% block scripts %}{% endblock %}
+
+<script>
+lucide.createIcons();
+// Navbar scroll
+const navbar=document.getElementById('navbar');
+window.addEventListener('scroll',()=>{
+    navbar.classList.toggle('scrolled',window.scrollY>20);
+    document.getElementById('backToTop').classList.toggle('hidden',window.scrollY<400);
+},{passive:true});
+document.getElementById('backToTop')?.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+// Mobile menu
+document.getElementById('mobileMenuBtn')?.addEventListener('click',()=>document.getElementById('mobileNav').classList.toggle('open'));
+// Cart Sidebar
+const cartToggleBtn=document.getElementById('cartToggleBtn');
+const closeCartBtn=document.getElementById('closeCart');
+const cartOverlay=document.getElementById('cartOverlay');
+const cartSidebar=document.getElementById('cartSidebar');
+function openCart(){cartSidebar.classList.add('open');cartOverlay.classList.remove('hidden');document.body.classList.add('cart-open');loadCartSidebar();}
+function closeCart(){cartSidebar.classList.remove('open');cartOverlay.classList.add('hidden');document.body.classList.remove('cart-open');}
+cartToggleBtn?.addEventListener('click',openCart);
+closeCartBtn?.addEventListener('click',closeCart);
+cartOverlay?.addEventListener('click',closeCart);
+async function loadCartSidebar(){
+    try{
+        const resp=await fetch('/cart/data');
+        const cart=await resp.json();
+        const itemsEl=document.getElementById('cartItems');
+        const emptyEl=document.getElementById('emptyCart');
+        const summaryEl=document.getElementById('cartSummary');
+        itemsEl.innerHTML='';
+        if(cart.items&&cart.items.length>0){
+            emptyEl.style.display='none';
+            summaryEl.classList.remove('hidden');
+            cart.items.forEach(item=>{
+                const div=document.createElement('div');
+                div.className='cart-item-row';
+                div.innerHTML=`<div class="cart-item-info"><p class="cart-item-name">${item.name||item.item_id}</p><p class="cart-item-price">EGP ${item.price.toFixed(2)}</p></div><div class="cart-item-controls"><button class="qty-btn" onclick="sidebarUpdateCart('${item.item_id}','decrease')">−</button><span class="qty-value">${item.quantity}</span><button class="qty-btn" onclick="sidebarUpdateCart('${item.item_id}','increase')">+</button><button class="qty-btn qty-remove" onclick="sidebarUpdateCart('${item.item_id}','remove')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M3 6h18M19 6l-1 14H6L5 6M10 11v6M14 11v6M8 6V4h8v2"/></svg></button></div>`;
+                itemsEl.appendChild(div);
             });
+            const total=cart.total.toFixed(2);
+            document.getElementById('cartSubtotal').textContent=`EGP ${total}`;
+            document.getElementById('cartTotalSidebar').textContent=`EGP ${total}`;
+        } else {
+            emptyEl.style.display='flex';
+            summaryEl.classList.add('hidden');
         }
-    </script>
+    }catch(e){console.log('Cart load failed:',e);}
+}
+async function sidebarUpdateCart(itemId,action){
+    try{
+        await fetch('/cart/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({item_id:itemId,action})});
+        await loadCartSidebar();
+        await updateCartBadge();
+    }catch(e){console.error('Cart update failed:',e);}
+}
+window.sidebarUpdateCart=sidebarUpdateCart;
+async function updateCartBadge(){
+    try{
+        const resp=await fetch('/cart/data');
+        const cart=await resp.json();
+        const badge=document.getElementById('cartBadge');
+        if(cart.items&&cart.items.length>0){
+            const total=cart.items.reduce((s,i)=>s+i.quantity,0);
+            badge.textContent=total;
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }catch(e){}
+}
+window.updateCartBadge=updateCartBadge;
+updateCartBadge();
+function showToast(msg,type='success'){
+    const c=document.getElementById('toastContainer');
+    const t=document.createElement('div');
+    t.className=`toast toast-${type}`;
+    t.textContent=msg;
+    c.appendChild(t);
+    setTimeout(()=>t.classList.add('show'),10);
+    setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400);},3000);
+}
+window.showToast=showToast;
+</script>
 </body>
 </html>

@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Display - EJUST Kitchen</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/kitchen.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo.png') }}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="kitchen-body">
+
+    <nav class="kitchen-nav">
+        <div class="kitchen-nav-container">
+            <div class="nav-brand">
+                <div class="brand-icon">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="EJUST Kitchen Logo">
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">EJUST Kitchen</span>
+                    <div class="brand-sub-row">
+                        <span class="brand-tagline">Kitchen Display</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nav-search">
+                <div class="search-wrapper">
+                    <input type="text" id="orderSearch" placeholder="Search order, item, or customer...">
+                    <span class="search-icon"><i data-lucide="search"></i></span>
+                    <button id="clearSearch" class="btn-clear hidden">&times;</button>
+                </div>
+            </div>
+
+            <div class="nav-stats">
+                <div class="stat-item">
+                    <span class="stat-value" id="totalActiveCount">0</span> active
+                </div>
+                <button class="btn-refresh-icon" id="refreshBtn" title="Refresh">
+                    <i data-lucide="refresh-cw"></i>
+                </button>
+                <a href="/staff" style="color:rgba(255,255,255,.5);font-size:.8rem;text-decoration:none;padding:.4rem .75rem;border:1px solid rgba(255,255,255,.1);border-radius:8px;transition:all .2s"
+                   onmouseover="this.style.color='white'" onmouseout="this.style.color='rgba(255,255,255,.5)'">
+                    ← Staff
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Mobile Column Selector -->
+    <div class="mobile-tabs-container">
+        <div class="mobile-tabs">
+            <button class="mobile-tab active" data-column="received">New <span id="mobile-count-received">0</span></button>
+            <button class="mobile-tab" data-column="preparing">Cooking <span id="mobile-count-preparing">0</span></button>
+            <button class="mobile-tab" data-column="ready">Ready <span id="mobile-count-ready">0</span></button>
+            <button class="mobile-tab" data-column="served">Past <span id="mobile-count-served">0</span></button>
+        </div>
+    </div>
+
+    <main class="kitchen-container">
+        <div class="orders-grid">
+            <!-- New Orders -->
+            <section class="order-column" id="column-received">
+                <div class="column-header">
+                    <h2 class="column-title">New Orders</h2>
+                    <span id="count-received" class="column-count">0</span>
+                </div>
+                <div class="order-list" id="list-received"></div>
+            </section>
+
+            <!-- Preparing -->
+            <section class="order-column" id="column-preparing">
+                <div class="column-header">
+                    <h2 class="column-title">Preparing</h2>
+                    <span id="count-preparing" class="column-count">0</span>
+                </div>
+                <div class="order-list" id="list-preparing"></div>
+            </section>
+
+            <!-- Ready (empty - no Flask status maps here) -->
+            <section class="order-column" id="column-ready">
+                <div class="column-header">
+                    <h2 class="column-title">Ready</h2>
+                    <span id="count-ready" class="column-count">0</span>
+                </div>
+                <div class="order-list" id="list-ready">
+                    <div style="padding:2rem;text-align:center;color:rgba(255,255,255,.2);font-size:.85rem">
+                        Orders move here when marked Out for Delivery
+                    </div>
+                </div>
+            </section>
+
+            <!-- Recently Served -->
+            <section class="order-column" id="column-served">
+                <div class="column-header">
+                    <h2 class="column-title">Recently Served</h2>
+                    <span id="count-served" class="column-count">0</span>
+                </div>
+                <div class="order-list" id="list-served"></div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Notification Sound -->
+    <audio id="orderSound" src="https://assets.mixkit.co/active_storage/sfx/2358/2358-preview.mp3" preload="auto"></audio>
+
+    <script>
+    lucide.createIcons();
+
+    let lastOrderIds = new Set();
+    let searchQuery = '';
+    let currentMobileCol = 'received';
+
+    // ── Mobile Tabs ──────────────────────────────────────────────
+    document.querySelectorAll('.mobile-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+            currentMobileCol = tab.dataset.column;
+            document.querySelectorAll('.order-column').forEach(col => {
+                col.classList.toggle('active', col.id === `column-${currentMobileCol}`);
+            });
+        });
+    });
+    // Init mobile
+    document.getElementById('column-received').classList.add('active');
+
+    // ── Search ───────────────────────────────────────────────────
+    const searchInput = document.getElementById('orderSearch');
+    const clearBtn = document.getElementById('clearSearch');
+    searchInput.addEventListener('input', () => {
+        searchQuery = searchInput.value.toLowerCase();
+        clearBtn.classList.toggle('hidden', !searchQuery);
+        filterCards();
+    });
+    clearBtn.addEventListener('click', () => {
+        searchInput.value = '';
+        searchQuery = '';
+        clearBtn.classList.add('hidden');
+        filterCards();
+    });
+
+    function filterCards() {
+        document.querySelectorAll('.kitchen-card').forEach(card => {
+            if (!searchQuery) { card.style.display = ''; return; }
+            const text = card.textContent.toLowerCase();
+            card.style.display = text.includes(searchQuery) ? '' : 'none';
+        });
+    }
+
+    // ── Time Formatting ──────────────────────────────────────────
+    function formatElapsed(isoString) {
+        if (!isoString) return '—';
+        const diff = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+        if (diff < 60) return `${diff}s`;
+        const mins = Math.floor(diff / 60);
+        if (mins < 60) return `${mins}m`;
+        return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+    }
+
+    function getTimeClass(isoString) {
+        if (!isoString) return '';
+        const mins = Math.floor((Date.now() - new Date(isoString).getTime()) / 60000);
+        if (mins >= 20) return 'time-danger';
+        if (mins >= 10) return 'time-warning';
+        return '';
+    }
+
+    // ── Card Builder ─────────────────────────────────────────────
+    function buildCard(order, column) {
+        const card = document.createElement('div');
+        card.className = 'kitchen-card';
+        card.dataset.orderId = order.id;
+
+        const isServed = column === 'served';
+        const elapsed = formatElapsed(order.created_at);
+        const timeClass = getTimeClass(order.created_at);
+
+        const itemsHtml = (order.items || []).map(item => {
+            const name = item.name || item.item_id || 'Item';
+            const qty = item.quantity || 1;
+            return `<div class="card-item-row">
+                <div class="item-name-wrapper">
+                    <div class="item-emoji">🍽️</div>
+                    <span>${name}</span>
+                </div>
+                <span class="item-qty">×${qty}</span>
+            </div>`;
+        }).join('');
+
+        let actionHtml = '';
+        if (!isServed) {
+            if (column === 'received') {
+                actionHtml = `<button class="btn-kitchen btn-next" onclick="advanceOrder('${order.id}')">
+                    Start Cooking →
+                </button>`;
+            } else if (column === 'preparing') {
+                actionHtml = `<button class="btn-kitchen btn-finish" onclick="advanceOrder('${order.id}')">
+                    Mark Delivered ✓
+                </button>`;
+            }
+        } else {
+            actionHtml = `<span class="served-badge">✓ Delivered</span>`;
+        }
+
+        card.innerHTML = `
+            <div class="card-header">
+                <span class="order-id">#${order.id}</span>
+                <span class="table-badge">${order.customer_name}</span>
+            </div>
+            <div class="card-items">${itemsHtml}</div>
+            ${order.customer_address ? `<div class="card-instructions">📍 ${order.customer_address}</div>` : ''}
+            <div class="card-footer">
+                <span class="time-elapsed ${timeClass}">
+                    <i data-lucide="clock" style="width:12px;height:12px;display:inline"></i>
+                    ${elapsed}
+                </span>
+                ${actionHtml}
+            </div>`;
+
+        return card;
+    }
+
+    // ── Advance Order ─────────────────────────────────────────────
+    async function advanceOrder(orderId) {
+        try {
+            const resp = await fetch(`/track/${encodeURIComponent(orderId)}/advance`, { method: 'POST' });
+            const data = await resp.json();
+            if (data.success) fetchOrders();
+        } catch(e) {
+            console.error('Advance failed:', e);
+        }
+    }
+    window.advanceOrder = advanceOrder;
+
+    // ── Render All Columns ────────────────────────────────────────
+    function renderColumns(columns, counts) {
+        const colKeys = ['received', 'preparing', 'ready', 'served'];
+        colKeys.forEach(col => {
+            const list = document.getElementById(`list-${col}`);
+            const countEl = document.getElementById(`count-${col}`);
+            const mobileCount = document.getElementById(`mobile-count-${col}`);
+
+            const orders = columns[col] || [];
+            countEl.textContent = orders.length;
+            if (mobileCount) mobileCount.textContent = orders.length;
+
+            if (col === 'ready') return; // Static message for empty ready column
+
+            list.innerHTML = '';
+            if (orders.length === 0) {
+                const empty = document.createElement('div');
+                empty.style.cssText = 'padding:2rem;text-align:center;color:rgba(255,255,255,.2);font-size:.85rem';
+                empty.textContent = 'No orders';
+                list.appendChild(empty);
+            } else {
+                orders.forEach(order => {
+                    const card = buildCard(order, col);
+                    list.appendChild(card);
+                });
+            }
+        });
+
+        // Total active (received + preparing)
+        const active = (counts.received || 0) + (counts.preparing || 0);
+        document.getElementById('totalActiveCount').textContent = active;
+
+        lucide.createIcons();
+        filterCards();
+    }
+
+    // ── Fetch & Poll ──────────────────────────────────────────────
+    async function fetchOrders() {
+        const btn = document.getElementById('refreshBtn');
+        btn.classList.add('refreshing');
+        try {
+            const resp = await fetch('/api/kitchen/orders');
+            const data = await resp.json();
+            if (data.success) {
+                // Check for new orders (sound notification)
+                const newIds = new Set((data.columns.received || []).map(o => o.id));
+                let hasNew = false;
+                newIds.forEach(id => { if (!lastOrderIds.has(id)) hasNew = true; });
+                if (hasNew && lastOrderIds.size > 0) {
+                    document.getElementById('orderSound')?.play().catch(()=>{});
+                }
+                lastOrderIds = newIds;
+                renderColumns(data.columns, data.counts);
+            }
+        } catch(e) {
+            console.error('Fetch failed:', e);
+        }
+        btn.classList.remove('refreshing');
+    }
+
+    document.getElementById('refreshBtn').addEventListener('click', fetchOrders);
+
+    // Initial load + poll every 10 seconds
+    fetchOrders();
+    setInterval(fetchOrders, 10000);
+
+    // Live time update every 30s
+    setInterval(() => {
+        document.querySelectorAll('.time-elapsed').forEach(el => {
+            // Force re-render via full refresh
+        });
+    }, 30000);
+    </script>
+</body>
+</html>

@@ -163,4 +163,4 @@ def test_logged_in_customer_can_create_and_view_own_reservation(client, app_cont
     reservation = Reservation.query.filter_by(customer_name="Mona").first()
     detail = client.get(f"/reservations/{reservation.id}")
     assert detail.status_code == 200
-    assert b"Your table is requested" in detail.data
+    assert b"Reservation #" in detail.data

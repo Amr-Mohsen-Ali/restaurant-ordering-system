@@ -1,169 +1,207 @@
 {% extends "base.html" %}
 
-{% block title %}Staff Operations{% endblock %}
+{% block title %}Staff Operations - EJUST Kitchen{% endblock %}
+
+{% block extra_head %}
+<style>
+.staff-sidebar-icon{opacity:.6;transition:opacity .2s}
+.dashboard-sidebar a:hover .staff-sidebar-icon,.dashboard-sidebar a.active .staff-sidebar-icon{opacity:1}
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="dashboard-layout">
-  <aside class="dashboard-sidebar">
-    <a href="/staff" class="dashboard-brand">Operations</a>
-    <a href="#orders">Orders</a>
-    <a href="#reservations">Reservations</a>
-    {% if user.role == 'admin' %}
-      <a href="/admin/dashboard">Admin Dashboard</a>
-    {% endif %}
-  </aside>
+    <!-- Sidebar -->
+    <aside class="dashboard-sidebar">
+        <a href="/staff" class="dashboard-brand">Staff Hub</a>
+        <a href="#orders">
+            <i data-lucide="clipboard-list" class="staff-sidebar-icon" style="width:16px;height:16px"></i>
+            Order Queue
+        </a>
+        <a href="#reservations">
+            <i data-lucide="calendar" class="staff-sidebar-icon" style="width:16px;height:16px"></i>
+            Reservations
+        </a>
+        <a href="/kitchen">
+            <i data-lucide="chef-hat" class="staff-sidebar-icon" style="width:16px;height:16px"></i>
+            Kitchen Display
+        </a>
+        {% if user.role == 'admin' %}
+        <a href="/admin/dashboard">
+            <i data-lucide="bar-chart-2" class="staff-sidebar-icon" style="width:16px;height:16px"></i>
+            Admin Dashboard
+        </a>
+        {% endif %}
+        <a href="/reservations">
+            <i data-lucide="plus-circle" class="staff-sidebar-icon" style="width:16px;height:16px"></i>
+            New Reservation
+        </a>
+    </aside>
 
-  <section class="dashboard-main">
-    <div class="dashboard-header">
-      <div>
-        <span class="eyebrow">Signed in as {{ user.username }} · {{ user.role }}</span>
-        <h1>Staff Operations</h1>
-      </div>
-      <a href="/reservations" class="dashboard-action">New Reservation</a>
-    </div>
-
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% for category, message in messages %}
-        <div class="dashboard-alert dashboard-alert-{{ category }}">{{ message }}</div>
-      {% endfor %}
-    {% endwith %}
-
-    <div class="metric-grid">
-      <div class="metric-card">
-        <span>Total Orders</span>
-        <strong>{{ metrics.total_orders }}</strong>
-      </div>
-      <div class="metric-card">
-        <span>Active Orders</span>
-        <strong>{{ metrics.active_orders }}</strong>
-      </div>
-      <div class="metric-card">
-        <span>Delivered</span>
-        <strong>{{ metrics.delivered_orders }}</strong>
-      </div>
-      <div class="metric-card">
-        <span>Reservations Today</span>
-        <strong>{{ metrics.reservations_today }}</strong>
-      </div>
-    </div>
-
-    <div id="orders" class="dashboard-card">
-      <div class="dashboard-card-header">
-        <h2>Order Queue</h2>
-        <span>{{ orders|length }} orders</span>
-      </div>
-
-      {% if orders %}
-        <div class="table-wrap">
-          <table class="dashboard-table">
-            <thead>
-              <tr>
-                <th>Order</th>
-                <th>Customer</th>
-                <th>Items</th>
-                <th>Total</th>
-                <th>Status</th>
-                <th>Update</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for order in orders %}
-                <tr>
-                  <td><strong>#{{ order.id }}</strong></td>
-                  <td>
-                    {{ order.customer_name or 'Guest' }}
-                    <span class="muted">{{ order.customer_address or 'No address' }}</span>
-                  </td>
-                  <td>
-                    {% if order["items"] %}
-                      {% for item in order["items"] %}
-                        <span class="line-item">{{ item.name if item.name is defined else item }}{% if item.quantity is defined %} x{{ item.quantity }}{% endif %}</span>
-                      {% endfor %}
-                    {% else %}
-                      <span class="muted">No items</span>
-                    {% endif %}
-                  </td>
-                  <td class="money">EGP {{ "%.2f"|format(order.total) }}</td>
-                  <td>
-                    {% set status_class = order.status|lower|replace(' ', '-') %}
-                    <span class="status-badge status-{{ status_class }}">{{ order.status }}</span>
-                  </td>
-                  <td>
-                    <form method="POST" action="{{ url_for('order.staff_update') }}" class="inline-form">
-                      <input type="hidden" name="order_id" value="{{ order.id }}">
-                      <select name="status">
-                        {% for s in valid_statuses %}
-                          <option value="{{ s }}" {% if s == order.status %}selected{% endif %}>{{ s }}</option>
-                        {% endfor %}
-                      </select>
-                      <button type="submit">Update</button>
-                    </form>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+    <!-- Main -->
+    <section class="dashboard-main">
+        <div class="dashboard-header">
+            <div>
+                <span class="eyebrow">{{ user.username }} · {{ user.role }}</span>
+                <h1>Staff Operations</h1>
+            </div>
+            <a href="/reservations" class="dashboard-action">
+                <i data-lucide="plus"></i> New Reservation
+            </a>
         </div>
-      {% else %}
-        <div class="empty-state-card">No orders yet. New kitchen tickets will appear here.</div>
-      {% endif %}
-    </div>
 
-    <div id="reservations" class="dashboard-card">
-      <div class="dashboard-card-header">
-        <h2>Reservations</h2>
-        <span>{{ reservations|length }} upcoming</span>
-      </div>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="dashboard-alert dashboard-alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
 
-      {% if reservations %}
-        <div class="table-wrap">
-          <table class="dashboard-table">
-            <thead>
-              <tr>
-                <th>Guest</th>
-                <th>Date</th>
-                <th>Slot</th>
-                <th>Table</th>
-                <th>Party</th>
-                <th>Status</th>
-                <th>Update</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for reservation in reservations %}
-                <tr>
-                  <td>
-                    {{ reservation.customer_name }}
-                    <span class="muted">{{ reservation.contact }}</span>
-                  </td>
-                  <td>{{ reservation.reservation_date }}</td>
-                  <td>{{ reservation.reservation_slot }}</td>
-                  <td>Table {{ reservation.table_number }}</td>
-                  <td>{{ reservation.party_size }}</td>
-                  <td>
-                    {% set status_class = reservation.status|lower %}
-                    <span class="status-badge reservation-{{ status_class }}">{{ reservation.status }}</span>
-                  </td>
-                  <td>
-                    <form method="POST" action="{{ url_for('order.reservation_update') }}" class="inline-form">
-                      <input type="hidden" name="reservation_id" value="{{ reservation.id }}">
-                      <select name="status">
-                        {% for s in reservation_statuses %}
-                          <option value="{{ s }}" {% if s == reservation.status %}selected{% endif %}>{{ s }}</option>
-                        {% endfor %}
-                      </select>
-                      <button type="submit">Save</button>
-                    </form>
-                  </td>
-                </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+        <!-- KPI Metrics -->
+        <div class="metric-grid">
+            <div class="metric-card">
+                <span>Total Orders</span>
+                <strong>{{ metrics.total_orders }}</strong>
+            </div>
+            <div class="metric-card">
+                <span>Active Orders</span>
+                <strong>{{ metrics.active_orders }}</strong>
+            </div>
+            <div class="metric-card">
+                <span>Delivered</span>
+                <strong>{{ metrics.delivered_orders }}</strong>
+            </div>
+            <div class="metric-card">
+                <span>Reservations Today</span>
+                <strong>{{ metrics.reservations_today }}</strong>
+            </div>
         </div>
-      {% else %}
-        <div class="empty-state-card">No reservations yet. Bookings will appear once guests reserve a table.</div>
-      {% endif %}
-    </div>
-  </section>
+
+        <!-- Order Queue -->
+        <div id="orders" class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h2><i data-lucide="clipboard-list" style="width:15px;height:15px;display:inline;vertical-align:middle;margin-right:.35rem"></i>Order Queue</h2>
+                <span>{{ orders|length }} order{% if orders|length != 1 %}s{% endif %}</span>
+            </div>
+            {% if orders %}
+                <div class="table-wrap">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Order</th>
+                                <th>Customer</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Update</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in orders %}
+                            <tr>
+                                <td><strong>#{{ order.id }}</strong></td>
+                                <td>
+                                    {{ order.customer_name or 'Guest' }}
+                                    <span class="muted">{{ order.customer_address or '' }}</span>
+                                </td>
+                                <td>
+                                    {% if order["items"] %}
+                                        {% for item in order["items"] %}
+                                            <span class="line-item">{{ item.name if item.name is defined else item }}{% if item.quantity is defined %} ×{{ item.quantity }}{% endif %}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="muted">No items</span>
+                                    {% endif %}
+                                </td>
+                                <td class="money">EGP {{ "%.2f"|format(order.total) }}</td>
+                                <td>
+                                    {% set sc = order.status|lower|replace(' ', '-') %}
+                                    <span class="status-badge status-{{ sc }}">{{ order.status }}</span>
+                                </td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('order.staff_update') }}" class="inline-form">
+                                        <input type="hidden" name="order_id" value="{{ order.id }}">
+                                        <select name="status">
+                                            {% for s in valid_statuses %}
+                                                <option value="{{ s }}" {% if s == order.status %}selected{% endif %}>{{ s }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit">Update</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state-card">
+                    <i data-lucide="inbox" style="width:36px;height:36px;margin-bottom:.75rem;opacity:.25"></i>
+                    <p>No orders yet. New kitchen tickets will appear here.</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Reservations -->
+        <div id="reservations" class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h2><i data-lucide="calendar" style="width:15px;height:15px;display:inline;vertical-align:middle;margin-right:.35rem"></i>Reservations</h2>
+                <span>{{ reservations|length }} upcoming</span>
+            </div>
+            {% if reservations %}
+                <div class="table-wrap">
+                    <table class="dashboard-table">
+                        <thead>
+                            <tr>
+                                <th>Guest</th>
+                                <th>Date</th>
+                                <th>Slot</th>
+                                <th>Table</th>
+                                <th>Party</th>
+                                <th>Status</th>
+                                <th>Update</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in reservations %}
+                            <tr>
+                                <td>
+                                    {{ r.customer_name }}
+                                    <span class="muted">{{ r.contact }}</span>
+                                </td>
+                                <td>{{ r.reservation_date }}</td>
+                                <td>{{ r.reservation_slot }}</td>
+                                <td>Table {{ r.table_number }}</td>
+                                <td>{{ r.party_size }}</td>
+                                <td>
+                                    <span class="status-badge reservation-{{ r.status|lower }}">{{ r.status }}</span>
+                                </td>
+                                <td>
+                                    <form method="POST" action="{{ url_for('order.reservation_update') }}" class="inline-form">
+                                        <input type="hidden" name="reservation_id" value="{{ r.id }}">
+                                        <select name="status">
+                                            {% for s in reservation_statuses %}
+                                                <option value="{{ s }}" {% if s == r.status %}selected{% endif %}>{{ s }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="submit">Save</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="empty-state-card">
+                    <i data-lucide="calendar-x" style="width:36px;height:36px;margin-bottom:.75rem;opacity:.25"></i>
+                    <p>No reservations yet. Bookings will appear here.</p>
+                </div>
+            {% endif %}
+        </div>
+    </section>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>lucide.createIcons();</script>
 {% endblock %}

@@ -38,12 +38,13 @@ def create_app(test_config=None):
     def home():
         return render_template('home.html')
 
-    from src import menu, cart, order, tracking, reservations
+    from src import menu, cart, order, tracking, reservations, kitchen
     app.register_blueprint(auth.auth_bp)
     app.register_blueprint(menu.menu_bp)
     app.register_blueprint(cart.cart_bp)
     app.register_blueprint(order.order_bp)
     app.register_blueprint(tracking.tracking_bp)
     app.register_blueprint(reservations.reservations_bp)
+    app.register_blueprint(kitchen.kitchen_bp)
 
     return app

@@ -1,50 +1,173 @@
 {% extends "base.html" %}
 
-{% block title %}Home - Restaurant Ordering{% endblock %}
+{% block title %}EJUST Kitchen - Order Fresh, Eat Well{% endblock %}
+
+{% block extra_head %}
+<style>
+.hero-section{position:relative;min-height:92vh;display:flex;align-items:center;overflow:hidden;background:radial-gradient(ellipse at 60% 50%,rgba(255,140,0,.12) 0%,transparent 70%),radial-gradient(ellipse at 20% 80%,rgba(220,20,60,.08) 0%,transparent 60%)}
+.hero-bg{position:absolute;inset:0;z-index:0}
+.hero-bg img{width:100%;height:100%;object-fit:cover;opacity:.18;filter:blur(2px)}
+.hero-bg::after{content:'';position:absolute;inset:0;background:linear-gradient(to right,rgba(13,5,0,.9) 40%,rgba(13,5,0,.4) 100%)}
+.hero-content{position:relative;z-index:1;max-width:var(--container-max);margin:0 auto;padding:6rem var(--container-padding) 4rem;display:grid;grid-template-columns:1fr 1fr;gap:3rem;align-items:center}
+.hero-text .eyebrow-label{display:inline-flex;align-items:center;gap:.5rem;padding:.4rem 1rem;background:rgba(255,140,0,.1);border:1px solid rgba(255,140,0,.25);border-radius:50px;font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--color-primary);margin-bottom:1.5rem}
+.hero-title{font-family:var(--font-display);font-size:clamp(2.5rem,6vw,4rem);font-weight:800;line-height:1.1;margin-bottom:1.25rem}
+.hero-subtitle{font-size:1.1rem;color:rgba(255,255,255,.65);line-height:1.7;margin-bottom:2rem;max-width:480px}
+.hero-actions{display:flex;gap:1rem;flex-wrap:wrap}
+.hero-stats{display:flex;gap:2rem;margin-top:2.5rem;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat strong{display:block;font-size:1.75rem;font-weight:800;background:var(--gradient-text);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.hero-stat span{font-size:.78rem;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:1px}
+.hero-image{position:relative;display:flex;justify-content:center;align-items:center}
+.hero-img-ring{position:relative;width:420px;height:420px;max-width:100%}
+.hero-img-ring::before{content:'';position:absolute;inset:-15px;border-radius:50%;border:2px solid rgba(255,140,0,.2);animation:pulse-ring 3s ease-in-out infinite}
+.hero-img-ring::after{content:'';position:absolute;inset:-30px;border-radius:50%;border:1px solid rgba(255,140,0,.08);animation:pulse-ring 3s ease-in-out infinite .5s}
+.hero-img-ring img{width:100%;height:100%;object-fit:cover;border-radius:50%;border:4px solid rgba(255,140,0,.3);box-shadow:0 0 60px rgba(255,140,0,.2)}
+@keyframes pulse-ring{0%,100%{transform:scale(1);opacity:.5}50%{transform:scale(1.04);opacity:1}}
+.category-section{padding:5rem 0;background:rgba(255,255,255,.01)}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-top:2rem}
+.cat-card{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:.75rem;padding:1.75rem 1rem;background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:20px;text-decoration:none;transition:all .3s ease;color:#fff}
+.cat-card:hover{background:rgba(255,140,0,.08);border-color:rgba(255,140,0,.3);transform:translateY(-6px);box-shadow:0 16px 32px rgba(0,0,0,.3)}
+.cat-icon{width:52px;height:52px;background:var(--gradient-primary);border-radius:16px;display:flex;align-items:center;justify-content:center}
+.cat-icon .lucide{width:26px;height:26px;stroke:white}
+.cat-name{font-weight:700;font-size:.875rem}
+.features-section{padding:5rem 0}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1.5rem;margin-top:2rem}
+.feature-card{padding:2rem;background:rgba(255,255,255,.03);border:1px solid var(--color-border);border-radius:20px;transition:all .3s ease}
+.feature-card:hover{background:rgba(255,255,255,.06);transform:translateY(-4px);box-shadow:0 12px 30px rgba(0,0,0,.3)}
+.feature-icon{width:52px;height:52px;background:var(--gradient-primary);border-radius:14px;display:flex;align-items:center;justify-content:center;margin-bottom:1.25rem}
+.feature-icon .lucide{width:26px;height:26px;stroke:white}
+.feature-title{font-size:1rem;font-weight:700;margin-bottom:.5rem}
+.feature-description{font-size:.875rem;color:rgba(255,255,255,.55);line-height:1.6}
+.cta-section{padding:5rem 0;text-align:center;position:relative;overflow:hidden}
+.cta-inner{position:relative;z-index:1;max-width:600px;margin:0 auto;padding:3rem 2rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,140,0,.2);border-radius:24px;backdrop-filter:blur(10px)}
+@media(max-width:768px){.hero-content{grid-template-columns:1fr;text-align:center;padding-top:8rem}.hero-subtitle{max-width:none}.hero-actions{justify-content:center}.hero-stats{justify-content:center}.hero-img-ring{width:280px;height:280px}.hero-image{order:-1}}
+</style>
+{% endblock %}
 
 {% block content %}
-<section class="home-section">
-    <div class="home-content">
-        <span>Welcome Foodies</span>
-        <h1>Original Taste from EJUST</h1>
-        <p>We guarantee to use fresh food with the best quality. Customers will enjoy our cuisine with explosive, sophisticated flavors.</p>
-        <a href="/menu" class="btn">Order Now</a>
-        <a href="/reservations" class="btn" style="background: var(--dark); margin-left: 1rem;">Book a Table</a>
+<!-- Hero -->
+<section class="hero-section" aria-labelledby="heroTitle">
+    <div class="hero-bg">
+        <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1600&auto=format&fit=crop" alt="Restaurant food">
     </div>
-    <div class="home-image">
-        <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=500&h=500&fit=crop" alt="Delicious Pizza">
+    <div class="hero-content">
+        <div class="hero-text">
+            <div class="eyebrow-label">
+                <i data-lucide="chef-hat"></i>
+                <span>EJUST Campus Kitchen</span>
+            </div>
+            <h1 id="heroTitle" class="hero-title">
+                Original Taste <span class="gradient-text">from EJUST</span>
+            </h1>
+            <p class="hero-subtitle">Fresh food made with quality ingredients. Order from your seat, track your food live, and reserve your table in seconds.</p>
+            <div class="hero-actions">
+                <a href="/menu" class="btn btn-primary btn-lg">
+                    <i data-lucide="utensils"></i>
+                    <span>Order Now</span>
+                </a>
+                <a href="/reservations" class="btn btn-outline btn-lg">
+                    <i data-lucide="calendar"></i>
+                    <span>Book a Table</span>
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div class="hero-stat"><strong>15–20</strong><span>Min delivery</span></div>
+                <div class="hero-stat"><strong>6+</strong><span>Tables</span></div>
+                <div class="hero-stat"><strong>100%</strong><span>Fresh daily</span></div>
+            </div>
+        </div>
+        <div class="hero-image">
+            <div class="hero-img-ring">
+                <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&h=600&fit=crop" alt="Delicious food">
+            </div>
+        </div>
     </div>
 </section>
 
-<section class="category-section">
-    <div class="heading">
-        <span>Our Menu</span>
-        <h3>Popular Categories</h3>
-    </div>
-    <div class="category-grid">
-        <a href="/menu?category=Main" class="category-box">
-            <h3>Main</h3>
-        </a>
-        <a href="/menu?category=Side" class="category-box">
-            <h3>Sides</h3>
-        </a>
-        <a href="/menu?category=Dessert" class="category-box">
-            <h3>Dessert</h3>
-        </a>
-        <a href="/menu?category=Drink" class="category-box">
-            <h3>Drinks</h3>
-        </a>
+<!-- Categories -->
+<section class="category-section" aria-labelledby="catTitle">
+    <div class="section-container">
+        <header class="section-header">
+            <h2 id="catTitle" class="section-title">Our <span class="gradient-text">Menu</span></h2>
+            <p class="section-subtitle">Explore our popular food categories</p>
+        </header>
+        <div class="cat-grid">
+            <a href="/menu?category=Main" class="cat-card">
+                <div class="cat-icon"><i data-lucide="utensils-crossed"></i></div>
+                <span class="cat-name">Main</span>
+            </a>
+            <a href="/menu?category=Side" class="cat-card">
+                <div class="cat-icon"><i data-lucide="cookie"></i></div>
+                <span class="cat-name">Sides</span>
+            </a>
+            <a href="/menu?category=Dessert" class="cat-card">
+                <div class="cat-icon"><i data-lucide="cake-slice"></i></div>
+                <span class="cat-name">Dessert</span>
+            </a>
+            <a href="/menu?category=Drink" class="cat-card">
+                <div class="cat-icon"><i data-lucide="cup-soda"></i></div>
+                <span class="cat-name">Drinks</span>
+            </a>
+            <a href="/menu" class="cat-card">
+                <div class="cat-icon"><i data-lucide="layout-grid"></i></div>
+                <span class="cat-name">All Items</span>
+            </a>
+        </div>
     </div>
 </section>
 
-<section class="category-section">
-    <div class="heading">
-        <span>Dine In</span>
-        <h3>Reserve Your Table</h3>
-    </div>
-    <div class="order-summary" style="max-width: 850px; margin: 0 auto; text-align: center;">
-        <p style="font-size: 1.5rem; color: var(--light); line-height: 1.8;">Choose a date, time slot, party size, and table before you arrive.</p>
-        <a href="/reservations" class="btn" style="margin-top: 1rem;">Reserve Now</a>
+<!-- Features -->
+<section class="features-section" aria-labelledby="featuresTitle">
+    <div class="section-container">
+        <header class="section-header">
+            <h2 id="featuresTitle" class="section-title">Why <span class="gradient-text">Choose Us</span></h2>
+        </header>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="chef-hat"></i></div>
+                <h3 class="feature-title">Expert Chefs</h3>
+                <p class="feature-description">Our chefs bring experience and passion to every dish we serve.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="leaf"></i></div>
+                <h3 class="feature-title">Fresh Ingredients</h3>
+                <p class="feature-description">We source the freshest ingredients daily for the best quality.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="zap"></i></div>
+                <h3 class="feature-title">Quick Service</h3>
+                <p class="feature-description">Hot food delivered to your table in 15–20 minutes guaranteed.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon"><i data-lucide="check-circle"></i></div>
+                <h3 class="feature-title">Live Tracking</h3>
+                <p class="feature-description">Track your order in real-time from kitchen to your table.</p>
+            </div>
+        </div>
     </div>
 </section>
+
+<!-- Reservation CTA -->
+<section class="cta-section">
+    <div class="section-container">
+        <div class="cta-inner">
+            <h2 class="section-title">Reserve Your <span class="gradient-text">Table</span></h2>
+            <p class="section-subtitle" style="margin-top:.75rem">Choose a date, time slot, party size, and table before you arrive.</p>
+            <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.75rem;flex-wrap:wrap">
+                <a href="/reservations" class="btn btn-primary btn-lg">
+                    <i data-lucide="calendar-check"></i>
+                    <span>Reserve Now</span>
+                </a>
+                <a href="/menu" class="btn btn-outline btn-lg">
+                    <i data-lucide="book-open"></i>
+                    <span>Browse Menu</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>lucide.createIcons();</script>
 {% endblock %}
