@@ -21,3 +21,21 @@ def test_get_all_menu_items_returns_list_after_insert(db):
     result = get_all_menu_items()
 
     assert len(result) > 0
+
+
+# --- add_menu_item ---
+
+def test_add_menu_item_with_valid_data_returns_success_true(db):
+    from src.menu import add_menu_item
+
+    result = add_menu_item("Pizza", 12.50, "Main")
+
+    assert result["success"] is True
+
+
+def test_add_menu_item_with_missing_name_returns_name_required_error(db):
+    from src.menu import add_menu_item
+
+    result = add_menu_item("", 12.50, "Main")
+
+    assert result["error"] == "Name is required"
