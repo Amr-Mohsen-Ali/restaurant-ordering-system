@@ -1,20 +1,27 @@
 import datetime
+import os
 
 from flask import Blueprint, jsonify, redirect, render_template, request, url_for
-
+from src.database import db, Order
 from src.cart import current_cart
-from src.data.orders import ORDERS
 
 order_bp = Blueprint('order', __name__)
 
 CANCEL_WINDOW = datetime.timedelta(minutes=2)
 
-_order_counter = 1000
-_placed_at = {}
+ORDER_COUNTER_FILE = os.path.join(os.path.dirname(__file__), '..', 'instance', 'order_counter.txt')
 
 
-def _now():
-    return datetime.datetime.now()
+def get_next_order_id():
+    try:
+        with open(ORDER_COUNTER_FILE, 'r') as f:
+            counter = int(f.read())
+    except:
+        counter = 1000
+    counter += 1
+    with open(ORDER_COUNTER_FILE, 'w') as f:
+        f.write(str(counter))
+    return str(counter)
 
 
 def place_order(cart_items, customer_info):
@@ -26,20 +33,20 @@ def place_order(cart_items, customer_info):
             or not customer_info.get("address")):
         return {"success": False, "error": "Missing customer info"}
 
-    global _order_counter
-    order_id = str(_order_counter)
-    _order_counter += 1
-
+    order_id = get_next_order_id()
     total = sum(item["price"] * item["quantity"] for item in cart_items)
 
-    ORDERS[order_id] = {
-        "id": order_id,
-        "items": cart_items,
-        "total": total,
-        "estimated_time": 25,
-        "status": "Preparing",
-    }
-    _placed_at[order_id] = _now()
+    order = Order(
+        id=order_id,
+        items=cart_items,
+        total=round(total, 2),
+        status='Preparing',
+        customer_name=customer_info['name'],
+        customer_address=customer_info['address'],
+        estimated_time=25
+    )
+    db.session.add(order)
+    db.session.commit()
 
     return {
         "success": True,
@@ -50,40 +57,27 @@ def place_order(cart_items, customer_info):
 
 
 def get_confirmation(order_id):
-    if not order_id or order_id not in ORDERS:
+    order = Order.query.get(order_id)
+    if not order:
         return {"success": False, "error": "Order not found"}
-    return ORDERS[order_id]
+    return order.to_dict()
 
 
 def cancel_order(order_id):
-    if not order_id or order_id not in ORDERS:
+    order = Order.query.get(order_id)
+    if not order:
         return {"success": False, "error": "Order not found"}
 
-    age = _now() - _placed_at[order_id]
+    if order.status in ['Ready', 'Delivered']:
+        return {"success": False, "error": f"Cannot cancel {order.status.lower()} order"}
+
+    age = datetime.datetime.utcnow() - order.created_at
     if age > CANCEL_WINDOW:
-        return {"success": False, "error": "Cannot cancel confirmed order"}
+        return {"success": False, "error": "Cannot cancel order after 2 minutes"}
 
-    return {"success": True, "message": "Order cancelled"}
-
-
-# --- Item resolution (stub — wire to src/menu.py later) ---
-
-_SAMPLE_ITEMS = {
-    "1": {"id": "1", "name": "Burger", "price": 9.99, "quantity": 1},
-    "2": {"id": "2", "name": "Fries", "price": 3.99, "quantity": 1},
-}
-
-
-def _resolve_items(item_ids):
-    return [_SAMPLE_ITEMS[i] for i in item_ids if i in _SAMPLE_ITEMS]
-
-
-def _demo_cart():
-    return [_SAMPLE_ITEMS["1"], _SAMPLE_ITEMS["2"]]
-
-
-def _cart_total(cart):
-    return sum(item["price"] * item["quantity"] for item in cart)
+    order.status = 'Cancelled'
+    db.session.commit()
+    return {"success": True, "message": "Order cancelled", "order_id": order_id}
 
 
 # --- JSON API routes ---
@@ -91,7 +85,7 @@ def _cart_total(cart):
 @order_bp.route('/place-order', methods=['POST'])
 def place_order_view():
     data = request.get_json(silent=True) or {}
-    cart = _resolve_items(data.get('items', []))
+    cart = data.get('items', [])
     customer = data.get('customer')
     result = place_order(cart, customer)
     if result["success"]:

@@ -3,12 +3,8 @@
 This file contains the order tracking business logic and Flask blueprint routes.
 """
 
-from copy import deepcopy
-
 from flask import Blueprint, jsonify, request, render_template
-
-from src.data.orders import ORDERS
-
+from src.database import db, Order
 
 tracking_bp = Blueprint("tracking", __name__)
 VALID_STATUSES = ["Preparing", "Out for Delivery", "Delivered"]
@@ -20,41 +16,31 @@ def is_empty_order_id(order_id):
 
 
 def get_order_status(order_id):
-    """Return the status for a valid order ID.
-
-    Raises:
-        ValueError: If the order ID does not exist.
-    """
-    cleaned_order_id = order_id.strip()
-
-    if cleaned_order_id not in ORDERS:
+    """Return the status for a valid order ID."""
+    order = Order.query.get(order_id.strip())
+    if not order:
         raise ValueError("Invalid order ID")
-
-    return ORDERS[cleaned_order_id]["status"]
+    return order.status
 
 
 def get_order_details(order_id):
-    """Return a copy of the full order details for a valid order ID."""
-    cleaned_order_id = order_id.strip()
-
-    if cleaned_order_id not in ORDERS:
+    """Return the full order details for a valid order ID."""
+    order = Order.query.get(order_id.strip())
+    if not order:
         raise ValueError("Invalid order ID")
-
-    return deepcopy(ORDERS[cleaned_order_id])
+    return order.to_dict()
 
 
 def update_order_status(order_id, new_status):
     """Update an order status when the status is allowed."""
-    cleaned_order_id = order_id.strip()
-
-    if cleaned_order_id not in ORDERS:
+    order = Order.query.get(order_id.strip())
+    if not order:
         raise ValueError("Invalid order ID")
-
     if new_status not in VALID_STATUSES:
         raise ValueError("Invalid status")
-
-    ORDERS[cleaned_order_id]["status"] = new_status
-    return get_order_details(cleaned_order_id)
+    order.status = new_status
+    db.session.commit()
+    return order.to_dict()
 
 
 def advance_order_status(order_id):
@@ -62,7 +48,6 @@ def advance_order_status(order_id):
     current_status = get_order_status(order_id)
     current_index = VALID_STATUSES.index(current_status)
     next_index = min(current_index + 1, len(VALID_STATUSES) - 1)
-
     return update_order_status(order_id, VALID_STATUSES[next_index])
 
 

@@ -1,11 +1,31 @@
+import os
 from flask import Flask, render_template
+from src.database import db, seed_orders
 
 
-def create_app():
+def create_app(test_config=None):
     app = Flask(__name__, 
                 template_folder="../templates",
                 static_folder="../static")
     app.secret_key = 'dev-secret-key'
+
+    if test_config and test_config.get('SQLALCHEMY_DATABASE_URI') == 'sqlite:///:memory:':
+        app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///:memory:'
+    else:
+        db_path = os.path.join(os.path.dirname(__file__), '..', 'instance', 'restaurant.db')
+        app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    if test_config:
+        app.config.update(test_config)
+
+    db.init_app(app)
+
+    with app.app_context():
+        db.create_all()
+        if not app.config.get('TESTING'):
+            seed_orders()
 
     @app.route('/')
     def home():

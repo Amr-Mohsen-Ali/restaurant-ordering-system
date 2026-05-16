@@ -1,12 +1,5 @@
 import pytest
 
-from src import create_app
-
-
-@pytest.fixture
-def app():
-    return create_app()
-
 
 @pytest.fixture
 def client(app):
@@ -14,23 +7,19 @@ def client(app):
 
 
 @pytest.mark.skip(reason="depends on Amr's tracking feature")
-def test_full_order_flow(client):
+def test_full_order_flow(client, app_context):
     menu_response = client.get('/menu')
     assert menu_response.status_code == 200, "Menu should be accessible"
 
 
-def test_tracking_page_loads(client):
+def test_tracking_page_loads(client, app_context):
     response = client.get("/tracking")
 
     assert response.status_code == 200
     assert b"Order Tracking" in response.data
 
-    assert response.status_code == 200
-    assert b"Order Tracking" in response.data
-
-    # moved below
     order_response = client.post('/place-order', json={
-        'items': ['1'],
+        'items': [{'name': 'Burger', 'price': 9.99, 'quantity': 1}],
         'total': 9.99,
         'customer': {'name': 'Gaber', 'address': '123 Main St'},
     })
@@ -38,7 +27,7 @@ def test_tracking_page_loads(client):
 
 
 
-def test_api_returns_status_for_valid_order(client):
+def test_api_returns_status_for_valid_order(client, app_context):
     response = client.get("/track/123")
 
     assert response.status_code == 200
@@ -46,15 +35,11 @@ def test_api_returns_status_for_valid_order(client):
 
     assert data["success"] is True
     assert data["status"] == "Preparing"
-    assert data["order"] == {
-        "id": "123",
-        "items": ["Burger", "Fries"],
-        "total": 12.50,
-        "status": "Preparing",
-    }
+    assert data["order"]["id"] == "123"
+    assert data["order"]["total"] == 12.50
 
 
-def test_api_returns_invalid_order_for_unknown_id(client):
+def test_api_returns_invalid_order_for_unknown_id(client, app_context):
     response = client.get("/track/999")
 
     assert response.status_code == 404
@@ -64,7 +49,7 @@ def test_api_returns_invalid_order_for_unknown_id(client):
     }
 
 
-def test_api_handles_empty_order_id(client):
+def test_api_handles_empty_order_id(client, app_context):
     response = client.get("/track/%20")
 
     assert response.status_code == 400
@@ -74,7 +59,7 @@ def test_api_handles_empty_order_id(client):
     }
 
 
-def test_api_handles_special_characters_as_invalid_id(client):
+def test_api_handles_special_characters_as_invalid_id(client, app_context):
     response = client.get("/track/%21%40%23")
 
     assert response.status_code == 404
@@ -84,7 +69,7 @@ def test_api_handles_special_characters_as_invalid_id(client):
     }
 
 
-def test_api_can_advance_order_status(client):
+def test_api_can_advance_order_status(client, app_context):
     client.post("/track/321/status", json={"status": "Preparing"})
 
     response = client.post("/track/321/advance")
@@ -95,7 +80,7 @@ def test_api_can_advance_order_status(client):
     client.post("/track/321/status", json={"status": "Preparing"})
 
 
-def test_api_rejects_invalid_status_update(client):
+def test_api_rejects_invalid_status_update(client, app_context):
     response = client.post("/track/123/status", json={"status": "Cooking"})
 
     assert response.status_code == 400

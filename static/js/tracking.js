@@ -33,7 +33,9 @@ function updateProgress(status) {
 
 
 function showOrderDetails(order) {
-  const itemList = order.items.length > 0 ? order.items.join(", ") : "No items listed";
+  const itemList = order.items.length > 0
+      ? order.items.map(item => `${item.name} x${item.quantity}`).join(", ")
+      : "No items listed";
 
   orderDetails.hidden = false;
   orderDetails.innerHTML = `
