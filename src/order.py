@@ -26,7 +26,7 @@ def get_all_orders():
             'customer_address': order.customer_address,
             'status': order.status,
             'total': order.total,
-            'items': order.items,
+            'items': order.order_items,
             'created_at': order.created_at.isoformat() if order.created_at else None
         })
     return result
@@ -72,7 +72,7 @@ def place_order(cart_items, customer_info):
 
     order = Order(
         id=order_id,
-        items=cart_items,
+        order_items=cart_items,
         total=round(total, 2),
         status='Preparing',
         customer_name=customer_info['name'],

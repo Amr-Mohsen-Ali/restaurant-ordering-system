@@ -6,10 +6,10 @@ from src.database import db, Order, CartItem
 def seed_test_orders():
     Order.query.delete()
     orders = [
-        Order(id='123', items=['Burger', 'Fries'], total=12.50, status='Preparing', customer_name='Ahmed', customer_address='123 Main St', estimated_time=15),
-        Order(id='456', items=['Pizza'], total=12.99, status='Out for Delivery', customer_name='Sara', customer_address='456 Oak Ave', estimated_time=5),
-        Order(id='789', items=['Salad'], total=7.50, status='Delivered', customer_name='Omar', customer_address='789 Pine Rd', estimated_time=0),
-        Order(id='321', items=['Pasta'], total=11.00, status='Preparing', customer_name='Lina', customer_address='321 Elm St', estimated_time=20),
+        Order(id='123', order_items=['Burger', 'Fries'], total=12.50, status='Preparing', customer_name='Ahmed', customer_address='123 Main St', estimated_time=15),
+        Order(id='456', order_items=['Pizza'], total=12.99, status='Out for Delivery', customer_name='Sara', customer_address='456 Oak Ave', estimated_time=5),
+        Order(id='789', order_items=['Salad'], total=7.50, status='Delivered', customer_name='Omar', customer_address='789 Pine Rd', estimated_time=0),
+        Order(id='321', order_items=['Pasta'], total=11.00, status='Preparing', customer_name='Lina', customer_address='321 Elm St', estimated_time=20),
     ]
     for order in orders:
         db.session.add(order)
