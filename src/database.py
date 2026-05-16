@@ -3,13 +3,15 @@
 Customer-facing order state remains in src.order's in-memory dicts
 (_orders, _placed_at) so the existing customer-facing tests stay green.
 This module persists the staff-facing fulfillment lifecycle (pending →
-preparing → ready → delivered) and user accounts for the auth feature.
+preparing → ready → delivered), user accounts for auth, and the menu
+catalogue managed by admins.
 
 Schema (denormalised — customer info embedded in orders rather than
 joined via users.customer_id):
     orders(id, customer_name, customer_address, status, total, placed_at)
     order_items(id, order_id, menu_item_id, name, quantity, price)
     users(id, username, password_hash, role)
+    menu_items(id, name, price, category, available)
 """
 
 import sqlite3
@@ -42,6 +44,14 @@ CREATE TABLE IF NOT EXISTS users (
     username TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     role TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS menu_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    price REAL NOT NULL,
+    category TEXT,
+    available INTEGER NOT NULL DEFAULT 1
 );
 """
 
