@@ -439,7 +439,7 @@
 }
 
 .inline-form select {
-    background: rgba(255, 255, 255, 0.05);
+    background: #1a0800;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md, 8px);
     padding: 0.4rem 0.65rem;
@@ -447,6 +447,11 @@
     font-size: 0.8rem;
     cursor: pointer;
     transition: border-color 0.2s;
+}
+
+.inline-form select option {
+    background-color: #1a0800;
+    color: #fff;
 }
 
 .inline-form select:focus {
