@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block title %}Log In{% endblock %}
+
+{% block extra_head %}
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+  
+  .auth-container {
+    max-width: 400px;
+    margin: 4rem auto;
+    padding: 2.5rem;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    font-family: 'Poppins', sans-serif;
+  }
+  .auth-container h1 {
+    margin-top: 0;
+    text-align: center;
+    color: #27ae60;
+    font-weight: 600;
+  }
+  .field { margin-bottom: 1.2rem; }
+  .field label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 500;
+    color: #333;
+  }
+  .field input {
+    width: 100%;
+    padding: 0.7rem;
+    box-sizing: border-box;
+    border: 2px solid #eee;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-family: 'Poppins', sans-serif;
+    transition: border-color 0.3s;
+  }
+  .field input:focus {
+    outline: none;
+    border-color: #27ae60;
+  }
+  .btn-primary {
+    width: 100%;
+    padding: 0.8rem;
+    margin-top: 0.5rem;
+    background: #27ae60;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+  .btn-primary:hover {
+    background: #219a52;
+  }
+  .alert {
+    padding: 0.8rem 1rem;
+    border-radius: 8px;
+    margin: 0 0 1rem 0;
+    font-family: 'Poppins', sans-serif;
+  }
+  .alert-error {
+    background: #fee;
+    border: 1px solid #f38609;
+    color: #c00;
+  }
+  .switch-link {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: #666;
+  }
+  .switch-link a {
+    color: #f38609;
+    font-weight: 500;
+    text-decoration: none;
+  }
+  .switch-link a:hover {
+    text-decoration: underline;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-container">
+  <h1>Log In</h1>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="alert alert-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+
+  <form method="POST" action="{{ url_for('auth.login_submit') }}">
+    <div class="field">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" value="{{ username or '' }}" required autofocus>
+    </div>
+    <div class="field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required>
+    </div>
+    <button type="submit" class="btn-primary">Log In</button>
+  </form>
+
+  <p class="switch-link">
+    Don't have an account? <a href="{{ url_for('auth.register_view') }}">Register</a>
+  </p>
+</div>
+{% endblock %}

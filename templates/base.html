@@ -19,6 +19,16 @@
             </a>
             <a href="/checkout">Checkout</a>
             <a href="/tracking">Track Order</a>
+            {% if current_user and current_user.role in ['staff', 'admin'] %}
+                <a href="/staff" style="color: #f38609;">Staff</a>
+            {% endif %}
+            {% if current_user %}
+                <span style="color: #888;">| {{ current_user.username }}</span>
+                <a href="/logout">Logout</a>
+            {% else %}
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            {% endif %}
         </div>
     </nav>
 

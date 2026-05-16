@@ -44,6 +44,22 @@ class CartItem(db.Model):
         }
 
 
+class User(db.Model):
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), nullable=False, unique=True)
+    password_hash = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(20), default='customer')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'role': self.role
+        }
+
+
 def seed_orders():
     """Seed sample orders for testing. Call after db.create_all() within app_context."""
     if Order.query.first() is None:

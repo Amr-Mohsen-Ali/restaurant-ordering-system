@@ -1,6 +1,7 @@
 import os
 from flask import Flask, render_template
 from src.database import db, seed_orders
+from src import auth
 
 
 def create_app(test_config=None):
@@ -27,11 +28,16 @@ def create_app(test_config=None):
         if not app.config.get('TESTING'):
             seed_orders()
 
+    @app.context_processor
+    def inject_current_user():
+        return {"current_user": auth.get_current_user()}
+
     @app.route('/')
     def home():
         return render_template('home.html')
 
     from src import menu, cart, order, tracking
+    app.register_blueprint(auth.auth_bp)
     app.register_blueprint(menu.menu_bp)
     app.register_blueprint(cart.cart_bp)
     app.register_blueprint(order.order_bp)

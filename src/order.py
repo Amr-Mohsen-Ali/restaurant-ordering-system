@@ -1,15 +1,49 @@
 import datetime
 import os
 
-from flask import Blueprint, jsonify, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from src.database import db, Order
 from src.cart import current_cart
+from src import auth
 
 order_bp = Blueprint('order', __name__)
 
 CANCEL_WINDOW = datetime.timedelta(minutes=2)
 
 ORDER_COUNTER_FILE = os.path.join(os.path.dirname(__file__), '..', 'instance', 'order_counter.txt')
+
+VALID_STAFF_STATUSES = ("Preparing", "Out for Delivery", "Delivered")
+
+
+def get_all_orders():
+    """Return all orders with customer info and their items."""
+    orders = Order.query.order_by(Order.created_at.desc()).all()
+    result = []
+    for order in orders:
+        result.append({
+            'id': order.id,
+            'customer_name': order.customer_name,
+            'customer_address': order.customer_address,
+            'status': order.status,
+            'total': order.total,
+            'items': order.items,
+            'created_at': order.created_at.isoformat() if order.created_at else None
+        })
+    return result
+
+
+def update_order_status(order_id, new_status):
+    """Update an order's status."""
+    if new_status not in VALID_STAFF_STATUSES:
+        return {"success": False, "error": "Invalid status"}
+    
+    order = Order.query.get(order_id)
+    if not order:
+        return {"success": False, "error": "Order not found"}
+    
+    order.status = new_status
+    db.session.commit()
+    return {"success": True, "status": new_status}
 
 
 def get_next_order_id():
@@ -177,3 +211,29 @@ def checkout_cancel(order_id):
         view="error",
         error=result.get("error", "Order not found"),
     ), 404
+
+
+# --- Staff UI routes ---
+
+@order_bp.route('/staff', methods=['GET'])
+@auth.login_required
+@auth.require_role("staff", "admin")
+def staff_view():
+    return render_template(
+        "staff.html",
+        orders=get_all_orders(),
+        user=auth.get_current_user(),
+        valid_statuses=VALID_STAFF_STATUSES,
+    )
+
+
+@order_bp.route('/staff/update', methods=['POST'])
+@auth.login_required
+@auth.require_role("staff", "admin")
+def staff_update():
+    order_id = request.form.get("order_id", "").strip()
+    new_status = request.form.get("status", "").strip()
+    result = update_order_status(order_id, new_status)
+    if not result["success"]:
+        flash(result["error"], "error")
+    return redirect(url_for("order.staff_view"))
