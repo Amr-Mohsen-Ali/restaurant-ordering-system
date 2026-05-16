@@ -57,3 +57,29 @@ def test_update_menu_item_with_valid_data_returns_success_true(db):
     result = update_menu_item(item_id, "New Name", 7.50, "Main", True)
 
     assert result["success"] is True
+
+
+# --- delete_menu_item ---
+
+def test_delete_menu_item_with_valid_id_returns_success_true(db):
+    from src.menu import delete_menu_item
+
+    with get_db() as conn:
+        cursor = conn.execute(
+            "INSERT INTO menu_items (name, price, category, available) "
+            "VALUES (?, ?, ?, ?)",
+            ("Burger", 9.99, "Main", 1),
+        )
+        item_id = cursor.lastrowid
+
+    result = delete_menu_item(item_id)
+
+    assert result["success"] is True
+
+
+def test_delete_menu_item_with_unknown_id_returns_not_found_error(db):
+    from src.menu import delete_menu_item
+
+    result = delete_menu_item(999999)
+
+    assert result["error"] == "Item not found"
