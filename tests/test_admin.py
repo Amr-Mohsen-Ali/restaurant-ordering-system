@@ -39,3 +39,21 @@ def test_add_menu_item_with_missing_name_returns_name_required_error(db):
     result = add_menu_item("", 12.50, "Main")
 
     assert result["error"] == "Name is required"
+
+
+# --- update_menu_item ---
+
+def test_update_menu_item_with_valid_data_returns_success_true(db):
+    from src.menu import update_menu_item
+
+    with get_db() as conn:
+        cursor = conn.execute(
+            "INSERT INTO menu_items (name, price, category, available) "
+            "VALUES (?, ?, ?, ?)",
+            ("Old Name", 5.00, "Side", 1),
+        )
+        item_id = cursor.lastrowid
+
+    result = update_menu_item(item_id, "New Name", 7.50, "Main", True)
+
+    assert result["success"] is True
