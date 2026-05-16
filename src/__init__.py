@@ -1,6 +1,6 @@
 import os
 from flask import Flask, render_template
-from src.database import db, seed_orders
+from src.database import db, seed_orders, seed_users
 from src import auth
 
 
@@ -27,6 +27,7 @@ def create_app(test_config=None):
         db.create_all()
         if not app.config.get('TESTING'):
             seed_orders()
+            seed_users()
 
     @app.context_processor
     def inject_current_user():

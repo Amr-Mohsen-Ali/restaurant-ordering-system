@@ -75,3 +75,27 @@ def seed_orders():
             db.session.add(order)
         db.session.commit()
         print("Seeded 6 sample orders to database.")
+
+
+def seed_users():
+    """Seed admin and staff users for testing. Call after db.create_all() within app_context."""
+    from werkzeug.security import generate_password_hash
+    
+    if User.query.filter_by(username='admin').first() is None:
+        admin = User(
+            username='admin',
+            password_hash=generate_password_hash('admin123'),
+            role='admin'
+        )
+        db.session.add(admin)
+    
+    if User.query.filter_by(username='staff').first() is None:
+        staff = User(
+            username='staff',
+            password_hash=generate_password_hash('staff123'),
+            role='staff'
+        )
+        db.session.add(staff)
+    
+    db.session.commit()
+    print("Seeded admin and staff users.")
