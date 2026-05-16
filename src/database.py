@@ -1,14 +1,15 @@
-"""SQLite storage for staff-facing order data.
+"""SQLite storage for the restaurant ordering system.
 
 Customer-facing order state remains in src.order's in-memory dicts
 (_orders, _placed_at) so the existing customer-facing tests stay green.
-This module persists the staff-facing fulfillment lifecycle: pending →
-preparing → ready → delivered. Staff status is independent of the
-customer-facing 'confirmed' status.
+This module persists the staff-facing fulfillment lifecycle (pending →
+preparing → ready → delivered) and user accounts for the auth feature.
 
-Schema (denormalised — no users table; auth is stubbed):
+Schema (denormalised — customer info embedded in orders rather than
+joined via users.customer_id):
     orders(id, customer_name, customer_address, status, total, placed_at)
     order_items(id, order_id, menu_item_id, name, quantity, price)
+    users(id, username, password_hash, role)
 """
 
 import sqlite3
@@ -34,6 +35,13 @@ CREATE TABLE IF NOT EXISTS order_items (
     quantity INTEGER NOT NULL,
     price REAL NOT NULL,
     FOREIGN KEY (order_id) REFERENCES orders(id)
+);
+
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username TEXT NOT NULL UNIQUE,
+    password_hash TEXT NOT NULL,
+    role TEXT NOT NULL
 );
 """
 
