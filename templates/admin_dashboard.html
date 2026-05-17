@@ -155,13 +155,19 @@
                     <div><label style="font-size:.8rem;color:var(--color-text-secondary)">Name</label>
                         <input type="text" name="name" required style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px"></div>
                     <div><label style="font-size:.8rem;color:var(--color-text-secondary)">Category</label>
-                        <input type="text" name="category" required style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px"></div>
+                        <select name="category" required style="width:100%;padding:.45rem;background:#1a0f0a;border:1px solid var(--color-border);color:#fff;border-radius:4px">
+                            <option value="Main">Main</option>
+                            <option value="Side">Side</option>
+                            <option value="Drink">Drink</option>
+                            <option value="Dessert">Dessert</option>
+                        </select>
+                    </div>
                     <div><label style="font-size:.8rem;color:var(--color-text-secondary)">Price (EGP)</label>
                         <input type="number" step="0.01" name="price" required style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px"></div>
                     <div><label style="font-size:.8rem;color:var(--color-text-secondary)">Image URL</label>
                         <input type="url" name="image" style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px"></div>
                     <div style="grid-column:1/-1"><label style="font-size:.8rem;color:var(--color-text-secondary)">Ingredients (comma-separated)</label>
-                        <input type="text" name="ingredients" style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px"></div>
+                        <input type="text" name="ingredients" placeholder="e.g. Beef Patty, Cheddar Cheese, Lettuce, Special Sauce" style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px"></div>
                     <div style="grid-column:1/-1;display:flex;align-items:center;gap:.5rem">
                         <input type="checkbox" name="available" id="newItemAvailable" checked>
                         <label for="newItemAvailable" style="font-size:.85rem">Available</label>

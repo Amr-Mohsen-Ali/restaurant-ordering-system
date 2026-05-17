@@ -8,7 +8,8 @@ menu_bp = Blueprint('menu', __name__)
 def menu_page():
     items = MenuItem.query.all()
     menu_list = [item.to_dict() for item in items]
-    categories = sorted(set(item['category'] for item in menu_list))
+    category_order = {'main': 1, 'side': 2, 'drink': 3, 'dessert': 4}
+    categories = sorted(set(item['category'] for item in menu_list), key=lambda c: category_order.get(c.lower(), 99))
     return render_template('menu.html', items=menu_list, categories=categories)
 
 
