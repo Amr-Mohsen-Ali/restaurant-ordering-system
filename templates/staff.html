@@ -14,6 +14,10 @@
     <!-- Sidebar -->
     <aside class="dashboard-sidebar">
         <a href="/staff" class="dashboard-brand">Staff Hub</a>
+        <a href="#waiter-calls">
+            <i data-lucide="bell-ring" class="staff-sidebar-icon" style="width:16px;height:16px"></i>
+            Waiter Calls
+        </a>
         <a href="#orders">
             <i data-lucide="clipboard-list" class="staff-sidebar-icon" style="width:16px;height:16px"></i>
             Order Queue
@@ -73,6 +77,20 @@
             <div class="metric-card">
                 <span>Reservations Today</span>
                 <strong>{{ metrics.reservations_today }}</strong>
+            </div>
+        </div>
+
+        <!-- Waiter Calls -->
+        <div id="waiter-calls" class="dashboard-card">
+            <div class="dashboard-card-header">
+                <h2><i data-lucide="bell-ring" style="width:15px;height:15px;display:inline;vertical-align:middle;margin-right:.35rem"></i>Waiter Calls</h2>
+                <span id="waiterCallCount">0 pending</span>
+            </div>
+            <div id="waiterCallsList">
+                <div class="empty-state-card" id="noWaiterCalls">
+                    <i data-lucide="bell-off" style="width:36px;height:36px;margin-bottom:.75rem;opacity:.25"></i>
+                    <p>No pending waiter calls.</p>
+                </div>
             </div>
         </div>
 
@@ -203,5 +221,39 @@
 {% endblock %}
 
 {% block scripts %}
-<script>lucide.createIcons();</script>
+<script>
+lucide.createIcons();
+
+// Poll waiter calls every 10 seconds
+async function loadWaiterCalls(){
+    try{
+        const r = await fetch('/api/waiter-calls');
+        const d = await r.json();
+        const list = document.getElementById('waiterCallsList');
+        const count = document.getElementById('waiterCallCount');
+        const empty = document.getElementById('noWaiterCalls');
+        if(!d.success) return;
+        const calls = d.calls || [];
+        count.textContent = calls.length + ' pending';
+        // clear old cards (keep the empty-state)
+        list.querySelectorAll('.waiter-call-card').forEach(el=>el.remove());
+        if(calls.length === 0){
+            empty.style.display = 'flex';
+        } else {
+            empty.style.display = 'none';
+            calls.forEach(c=>{
+                const card = document.createElement('div');
+                card.className = 'waiter-call-card';
+                card.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:.75rem 1rem;border-bottom:1px solid rgba(255,255,255,.06)';
+                const time = c.created_at ? new Date(c.created_at).toLocaleTimeString() : '';
+                card.innerHTML = `<div><strong style="color:var(--color-primary)">Table ${c.table_number}</strong><span class="muted" style="margin-left:.75rem;font-size:.8rem">${time}</span></div><form action="/admin/waiter-calls/resolve/${c.id}" method="POST" style="display:inline"><button type="submit" class="btn btn-primary btn-sm">Resolve</button></form>`;
+                list.appendChild(card);
+            });
+        }
+        lucide.createIcons();
+    }catch(e){console.log('Waiter call fetch error',e);}
+}
+loadWaiterCalls();
+setInterval(loadWaiterCalls, 10000);
+</script>
 {% endblock %}

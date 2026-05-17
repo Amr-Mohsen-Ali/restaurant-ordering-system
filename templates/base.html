@@ -74,6 +74,12 @@
                 <a href="/login" class="btn btn-outline btn-sm">Login</a>
                 <a href="/register" class="btn btn-primary btn-sm">Register</a>
             {% endif %}
+            {% if table_number %}
+            <button id="callWaiterBtn" class="btn btn-outline btn-sm" data-table="{{ table_number }}" style="display:inline-flex;align-items:center;gap:.4rem;border-color:var(--color-primary);color:var(--color-primary)">
+                <i data-lucide="bell" style="width:16px;height:16px"></i>
+                <span>Call Waiter</span>
+            </button>
+            {% endif %}
             <button id="cartToggleBtn" class="btn btn-outline btn-navbar-action btn-cart" aria-label="View cart">
                 <span class="btn-icon">
                     <svg class="cart-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -264,6 +270,18 @@ function showToast(msg,type='success'){
     setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400);},3000);
 }
 window.showToast=showToast;
+// Call Waiter
+const _cwBtn=document.getElementById('callWaiterBtn');
+if(_cwBtn){
+    _cwBtn.addEventListener('click',async()=>{
+        const t=_cwBtn.dataset.table;
+        try{
+            const r=await fetch('/api/call-waiter',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({table_number:t})});
+            const d=await r.json();
+            showToast(d.success?'Waiter has been called!':'Failed to call waiter.',d.success?'success':'error');
+        }catch(e){showToast('Error calling waiter.','error');}
+    });
+}
 </script>
 </body>
 </html>

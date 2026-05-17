@@ -13,6 +13,48 @@ from src.constants import (
 db = SQLAlchemy()
 
 
+# --------------- NEW: MenuItem model ---------------
+class MenuItem(db.Model):
+    __tablename__ = 'menu_items'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    ingredients = db.Column(db.JSON, default=list)
+    available = db.Column(db.Boolean, default=True)
+    image = db.Column(db.String(500))
+
+    def to_dict(self):
+        return {
+            'id': str(self.id),
+            'name': self.name,
+            'price': self.price,
+            'category': self.category,
+            'ingredients': self.ingredients or [],
+            'available': self.available,
+            'image': self.image,
+        }
+
+
+# --------------- NEW: WaiterCall model ---------------
+class WaiterCall(db.Model):
+    __tablename__ = 'waiter_calls'
+
+    id = db.Column(db.Integer, primary_key=True)
+    table_number = db.Column(db.String(20), nullable=False)
+    status = db.Column(db.String(20), default='pending')  # pending | resolved
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'table_number': self.table_number,
+            'status': self.status,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+        }
+
+
 class Order(db.Model):
     __tablename__ = 'orders'
 
@@ -118,6 +160,29 @@ class Reservation(db.Model):
             'notes': self.notes,
             'created_at': self.created_at.isoformat() if self.created_at else None,
         }
+
+
+# --------------- NEW: seed_menu ---------------
+def seed_menu():
+    """Populate the menu_items table with defaults on first run."""
+    if MenuItem.query.first() is not None:
+        return
+    defaults = [
+        {"name": "Pizza",           "price": 240.0, "category": "Main",    "ingredients": ["Tomato","Mozzarella","Basil"],                    "available": True,  "image": "https://plus.unsplash.com/premium_photo-1733306588881-0411931d4fed?q=80&w=1169&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"},
+        {"name": "Classic Burger",  "price": 185.0, "category": "Main",    "ingredients": ["Beef Patty","Cheddar","Lettuce","Tomato"],         "available": True,  "image": "https://images.unsplash.com/photo-1572802419224-296b0aeee0d9?q=80&w=1115&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"},
+        {"name": "Salad",           "price":  95.0, "category": "Main",    "ingredients": ["Romaine","Parmesan","Croutons","Caesar Dressing"], "available": False, "image": "https://images.unsplash.com/photo-1607532941433-304659e8198a?q=80&w=1078&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"},
+        {"name": "Fries",           "price":  70.0, "category": "Side",    "ingredients": ["Potatoes","Salt","Oil"],                          "available": True,  "image": "https://images.unsplash.com/photo-1630384060421-cb20d0e0649d?q=80&w=1025&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"},
+        {"name": "Onion Rings",     "price":  85.0, "category": "Side",    "ingredients": ["Onions","Batter","Oil"],                          "available": True,  "image": "https://images.unsplash.com/photo-1639024471283-03518883512d?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"},
+        {"name": "Coleslaw",        "price":  55.0, "category": "Side",    "ingredients": ["Cabbage","Carrots","Mayonnaise"],                 "available": False, "image": "https://images.unsplash.com/photo-1654458804670-2f4f26ab3154?q=80&w=880&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"},
+        {"name": "Chocolate Cake",  "price": 110.0, "category": "Dessert", "ingredients": ["Chocolate","Flour","Sugar","Eggs"],               "available": True,  "image": "https://images.unsplash.com/photo-1517427294546-5aa121f68e8a?q=80&w=764&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"},
+        {"name": "Ice Cream",       "price":  80.0, "category": "Dessert", "ingredients": ["Cream","Sugar","Vanilla"],                        "available": True,  "image": "https://images.unsplash.com/photo-1560008581-09826d1de69e?q=80&w=744&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"},
+        {"name": "Soda",            "price":  45.0, "category": "Drink",   "ingredients": ["Carbonated Water","Sugar","Flavoring"],            "available": True,  "image": "https://plus.unsplash.com/premium_photo-1725075086631-b21a5642918b?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"},
+        {"name": "Orange Juice",    "price":  65.0, "category": "Drink",   "ingredients": ["Oranges"],                                        "available": False, "image": "https://images.unsplash.com/photo-1600271886742-f049cd451bba?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"},
+    ]
+    for d in defaults:
+        db.session.add(MenuItem(**d))
+    db.session.commit()
+    print("Seeded default menu items.")
 
 
 def seed_orders():

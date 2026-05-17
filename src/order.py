@@ -12,7 +12,7 @@ from src.constants import (
     ROLE_STAFF,
     is_valid_order_status,
 )
-from src.database import db, Order
+from src.database import db, Order, MenuItem, User
 from src.cart import clear_cart, get_cart
 from src import auth
 from src.reservations_service import count_reservations_today, get_upcoming_reservations, update_reservation_status
@@ -302,10 +302,14 @@ def reservation_update():
 def admin_dashboard():
     recent_orders = Order.query.order_by(Order.created_at.desc()).limit(8).all()
     reservations = get_upcoming_reservations(limit=8)
+    menu_items = MenuItem.query.all()
+    staff_list = User.query.filter(User.role.in_([ROLE_STAFF, ROLE_ADMIN])).all()
     return render_template(
         "admin_dashboard.html",
         metrics=get_dashboard_metrics(),
         recent_orders=recent_orders,
         reservations=reservations,
+        menu_items=menu_items,
+        staff_list=staff_list,
         user=auth.get_current_user(),
     )

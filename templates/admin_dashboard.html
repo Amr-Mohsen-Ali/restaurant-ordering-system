@@ -19,6 +19,18 @@
             <i data-lucide="calendar" style="width:16px;height:16px;opacity:.6"></i>
             Reservations
         </a>
+        <a href="#table-management">
+            <i data-lucide="qr-code" style="width:16px;height:16px;opacity:.6"></i>
+            Table Management
+        </a>
+        <a href="#menu-management">
+            <i data-lucide="utensils" style="width:16px;height:16px;opacity:.6"></i>
+            Menu Management
+        </a>
+        <a href="#staff-management">
+            <i data-lucide="user-plus" style="width:16px;height:16px;opacity:.6"></i>
+            Staff Management
+        </a>
         <a href="/staff">
             <i data-lucide="users" style="width:16px;height:16px;opacity:.6"></i>
             Staff Operations
@@ -40,6 +52,12 @@
                 <i data-lucide="zap"></i> Operations
             </a>
         </div>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="dashboard-alert dashboard-alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
 
         <!-- KPI Grid -->
         <div id="overview" class="metric-grid">
@@ -109,8 +127,127 @@
             </div>
         </div>
 
+        <!-- ═══════════════ TABLE QR MANAGEMENT ═══════════════ -->
+        <div id="table-management" class="dashboard-card" style="margin-top:var(--space-xl)">
+            <div class="dashboard-card-header" style="display:flex;justify-content:space-between;align-items:center">
+                <h2><i data-lucide="qr-code" style="width:15px;height:15px;display:inline;vertical-align:middle;margin-right:.35rem"></i>Table Management</h2>
+                <div style="display:flex;align-items:center;gap:.75rem">
+                    <label for="tableCount" style="font-size:.85rem;color:var(--color-text-secondary)">Number of Tables</label>
+                    <input type="number" id="tableCount" value="4" min="1" max="100"
+                           style="background:rgba(0,0,0,.3);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:.35rem .5rem;width:65px;text-align:center;color:#fff;font-weight:600">
+                </div>
+            </div>
+            <div id="qrGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-top:1rem">
+            </div>
+        </div>
+
+        <!-- ═══════════════ MENU MANAGEMENT ═══════════════ -->
+        <div id="menu-management" class="dashboard-card" style="margin-top:var(--space-xl)">
+            <div class="dashboard-card-header">
+                <h2><i data-lucide="utensils" style="width:15px;height:15px;display:inline;vertical-align:middle;margin-right:.35rem"></i>Menu Management</h2>
+            </div>
+
+            <!-- Add form -->
+            <form action="/admin/menu/add" method="POST"
+                  style="display:grid;gap:1rem;margin-bottom:2rem;padding:1.25rem;background:rgba(255,255,255,.02);border:1px solid var(--color-border);border-radius:var(--radius-lg)">
+                <h3 style="margin:0;font-size:1rem">Add New Menu Item</h3>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem">
+                    <div><label style="font-size:.8rem;color:var(--color-text-secondary)">Name</label>
+                        <input type="text" name="name" required style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px"></div>
+                    <div><label style="font-size:.8rem;color:var(--color-text-secondary)">Category</label>
+                        <input type="text" name="category" required style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px"></div>
+                    <div><label style="font-size:.8rem;color:var(--color-text-secondary)">Price (EGP)</label>
+                        <input type="number" step="0.01" name="price" required style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px"></div>
+                    <div><label style="font-size:.8rem;color:var(--color-text-secondary)">Image URL</label>
+                        <input type="url" name="image" style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px"></div>
+                    <div style="grid-column:1/-1"><label style="font-size:.8rem;color:var(--color-text-secondary)">Ingredients (comma-separated)</label>
+                        <input type="text" name="ingredients" style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px"></div>
+                    <div style="grid-column:1/-1;display:flex;align-items:center;gap:.5rem">
+                        <input type="checkbox" name="available" id="newItemAvailable" checked>
+                        <label for="newItemAvailable" style="font-size:.85rem">Available</label>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary" style="justify-self:start">Add Item</button>
+            </form>
+
+            <!-- Menu table -->
+            <div class="table-wrap">
+                <table class="dashboard-table">
+                    <thead>
+                        <tr><th>Name</th><th>Category</th><th>Price</th><th>Available</th><th>Actions</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for item in menu_items %}
+                        <tr>
+                            <td><strong>{{ item.name }}</strong></td>
+                            <td>{{ item.category }}</td>
+                            <td class="money">EGP {{ "%.2f"|format(item.price) }}</td>
+                            <td>
+                                {% if item.available %}
+                                    <span class="status-badge status-preparing">Available</span>
+                                {% else %}
+                                    <span class="status-badge status-cancelled">Unavailable</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form action="/admin/menu/toggle/{{ item.id }}" method="POST" style="display:inline">
+                                    <button type="submit" style="background:none;border:none;color:var(--color-primary);cursor:pointer;padding:4px" title="{% if item.available %}Make Unavailable{% else %}Make Available{% endif %}">
+                                        <i data-lucide="{% if item.available %}eye-off{% else %}eye{% endif %}" style="width:16px;height:16px"></i>
+                                    </button>
+                                </form>
+                                <form action="/admin/menu/delete/{{ item.id }}" method="POST" style="display:inline" onsubmit="return confirm('Delete {{ item.name }}?')">
+                                    <button type="submit" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:4px" title="Delete">
+                                        <i data-lucide="trash-2" style="width:16px;height:16px"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══════════════ STAFF MANAGEMENT ═══════════════ -->
+        <div id="staff-management" class="dashboard-card" style="margin-top:var(--space-xl)">
+            <div class="dashboard-card-header">
+                <h2><i data-lucide="user-plus" style="width:15px;height:15px;display:inline;vertical-align:middle;margin-right:.35rem"></i>Staff Management</h2>
+            </div>
+
+            <!-- Add staff form -->
+            <form action="/admin/staff/add" method="POST"
+                  style="display:flex;gap:1rem;align-items:flex-end;margin-bottom:1.5rem">
+                <div style="flex:1">
+                    <label style="font-size:.8rem;color:var(--color-text-secondary)">Username</label>
+                    <input type="text" name="username" required style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px;margin-top:.2rem">
+                </div>
+                <div style="flex:1">
+                    <label style="font-size:.8rem;color:var(--color-text-secondary)">Password</label>
+                    <input type="password" name="password" required style="width:100%;padding:.45rem;background:rgba(0,0,0,.3);border:1px solid var(--color-border);color:#fff;border-radius:4px;margin-top:.2rem">
+                </div>
+                <button type="submit" class="btn btn-primary" style="height:36px">Create Staff</button>
+            </form>
+
+            <!-- Existing staff list -->
+            {% if staff_list %}
+            <div class="table-wrap">
+                <table class="dashboard-table">
+                    <thead><tr><th>Username</th><th>Role</th></tr></thead>
+                    <tbody>
+                        {% for s in staff_list %}
+                        <tr>
+                            <td>{{ s.username }}</td>
+                            <td><span class="status-badge status-preparing">{{ s.role }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+
         <!-- Recent Orders Table -->
-        <div id="orders" class="dashboard-card">
+        <div id="orders" class="dashboard-card" style="margin-top:var(--space-xl)">
             <div class="dashboard-card-header">
                 <h2><i data-lucide="clock" style="width:15px;height:15px;display:inline;vertical-align:middle;margin-right:.35rem"></i>Recent Orders</h2>
                 <span>Last {{ recent_orders|length }}</span>
@@ -154,5 +291,61 @@
 {% endblock %}
 
 {% block scripts %}
-<script>lucide.createIcons();</script>
+<script>
+lucide.createIcons();
+
+/* ── Table QR Management ────────────────────────────────────── */
+(function(){
+    const input = document.getElementById('tableCount');
+    const grid  = document.getElementById('qrGrid');
+    const saved = localStorage.getItem('ejust_table_count');
+    if (saved && input) input.value = saved;
+
+    function render(){
+        const count   = parseInt(input?.value) || 4;
+        const baseUrl = location.origin + '/?table=';
+        grid.innerHTML = '';
+        for(let i = 1; i <= count; i++){
+            const url = baseUrl + i;
+            const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(url)}&color=0d0500`;
+            const qrHi  = `https://api.qrserver.com/v1/create-qr-code/?size=1000x1000&data=${encodeURIComponent(url)}&color=0d0500`;
+            const card = document.createElement('div');
+            card.style.cssText = 'background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1rem;display:flex;flex-direction:column;gap:.75rem;align-items:center;';
+            card.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;width:100%">
+                    <strong>Table ${i}</strong>
+                    <button class="dl-qr" data-n="${i}" data-url="${qrHi}" style="background:rgba(255,255,255,.05);border:1px solid var(--color-border);color:#fff;border-radius:4px;padding:4px;cursor:pointer"><i data-lucide="download" style="width:16px;height:16px"></i></button>
+                </div>
+                <div style="background:#fff;padding:.5rem;border-radius:8px"><img src="${qrSrc}" alt="QR Table ${i}" style="width:120px;height:120px;display:block" loading="lazy"></div>
+                <button class="btn btn-outline btn-sm" onclick="window.open('${url}','_blank')" style="width:100%">Open Table Menu</button>
+            `;
+            grid.appendChild(card);
+        }
+        lucide.createIcons();
+        grid.querySelectorAll('.dl-qr').forEach(btn => btn.addEventListener('click', downloadQR));
+    }
+
+    async function downloadQR(e){
+        const btn = e.currentTarget;
+        try{
+            const r = await fetch(btn.dataset.url);
+            const b = await r.blob();
+            const u = URL.createObjectURL(b);
+            const a = document.createElement('a');
+            a.href = u; a.download = `table-${btn.dataset.n}-qr.png`;
+            document.body.appendChild(a); a.click(); a.remove();
+            setTimeout(()=>URL.revokeObjectURL(u),100);
+        }catch(err){ alert('Download failed'); }
+    }
+
+    render();
+    if(input){
+        input.addEventListener('input',()=>{
+            localStorage.setItem('ejust_table_count', input.value);
+            clearTimeout(input._t);
+            input._t = setTimeout(render, 300);
+        });
+    }
+})();
+</script>
 {% endblock %}

@@ -1,6 +1,6 @@
 import os
-from flask import Flask, render_template
-from src.database import db, ensure_cart_columns, seed_orders, seed_users
+from flask import Flask, render_template, request, session
+from src.database import db, ensure_cart_columns, seed_menu, seed_orders, seed_users
 from src import auth
 
 
@@ -27,18 +27,32 @@ def create_app(test_config=None):
         db.create_all()
         ensure_cart_columns()
         if not app.config.get('TESTING'):
+            seed_menu()
             seed_orders()
             seed_users()
 
+    # --- Table session capture (QR ?table=X) ---
+    @app.before_request
+    def capture_table_number():
+        if request.path == '/':
+            table = request.args.get('table')
+            if table:
+                session['table_number'] = table
+            else:
+                session.pop('table_number', None)
+
     @app.context_processor
     def inject_current_user():
-        return {"current_user": auth.get_current_user()}
+        return {
+            "current_user": auth.get_current_user(),
+            "table_number": session.get('table_number'),
+        }
 
     @app.route('/')
     def home():
         return render_template('home.html')
 
-    from src import menu, cart, order, tracking, reservations, kitchen
+    from src import menu, cart, order, tracking, reservations, kitchen, admin
     app.register_blueprint(auth.auth_bp)
     app.register_blueprint(menu.menu_bp)
     app.register_blueprint(cart.cart_bp)
@@ -46,5 +60,7 @@ def create_app(test_config=None):
     app.register_blueprint(tracking.tracking_bp)
     app.register_blueprint(reservations.reservations_bp)
     app.register_blueprint(kitchen.kitchen_bp)
+    app.register_blueprint(admin.admin_bp)
+    app.register_blueprint(admin.waiter_api_bp)
 
     return app
